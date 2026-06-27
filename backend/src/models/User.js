@@ -56,7 +56,7 @@ const userSchema = new mongoose.Schema(
     phone: {
       type: String,
       trim: true,
-      match: [/^\+?[\d\s\-]{7,15}$/, 'Please enter a valid phone number'],
+      match: [/^\+?[\d\s-]{7,15}$/, 'Please enter a valid phone number'],
     },
     avatar: {
       type: String,

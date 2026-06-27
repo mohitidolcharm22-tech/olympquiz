@@ -12,7 +12,7 @@ exports.getAll = catchAsync(async (req, res) => {
 })
 
 /* POST /api/v1/badges  — admin only */
-exports.create = catchAsync(async (req, res) => {
+exports.create = catchAsync(async (req, res, next) => {
   const { name, icon, description, color, category } = req.body
   if (!name) return next(new AppError('Badge name is required.', 400))
   const badge = await Badge.create({ name, icon, description, color, category, createdBy: req.user._id })
