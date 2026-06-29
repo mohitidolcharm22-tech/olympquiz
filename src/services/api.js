@@ -1,7 +1,12 @@
 import axios from 'axios'
 
+// Normalize the configured base URL so a missing protocol (a common Vercel
+// env-var mistake) can't be interpreted as a relative path by the browser.
+const rawBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'
+const baseURL = /^https?:\/\//i.test(rawBaseUrl) ? rawBaseUrl : `https://${rawBaseUrl}`
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1',
+  baseURL,
   withCredentials: true,   // send HttpOnly refresh-token cookie
   headers: { 'Content-Type': 'application/json' },
 })
