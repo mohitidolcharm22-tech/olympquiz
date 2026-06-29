@@ -60,23 +60,18 @@ An interactive quiz and learning platform for Olympiad preparation, built for st
 
 ```
 OlympQuiz/
-├── frontend/          # React + Vite app
-│   ├── src/
-│   │   ├── features/  # Page components (admin / auth / parent / student / teacher)
-│   │   ├── components/# Shared UI & layouts
-│   │   ├── services/  # Axios API clients
-│   │   ├── store/     # Redux slices
-│   │   └── routes/    # React Router config
-│   └── vite.config.js
-├── backend/           # Express REST API
-│   └── src/
-│       ├── controllers/
-│       ├── models/    # Mongoose schemas
-│       ├── routes/
-│       ├── middleware/
-│       └── server.js
+├── src/
+│   ├── features/      # Page components (admin / auth / parent / student / teacher)
+│   ├── components/    # Shared UI & layouts
+│   ├── services/      # Axios API clients
+│   ├── store/         # Redux slices
+│   └── routes/        # React Router config
+├── public/
+├── vite.config.js
 └── .github/workflows/ # GitHub Actions CI
 ```
+
+> The backend (Express REST API) lives in a separate repository.
 
 ---
 
@@ -93,40 +88,21 @@ git clone https://github.com/mohitidolcharm22-tech/olympquiz.git
 cd olympquiz
 ```
 
-### 2. Backend
+### 2. Install & Run
 
 ```bash
-cd backend
-cp .env.example .env        # fill in required values
-npm install
-npm run dev                 # starts on http://localhost:5000
-```
-
-### 3. Frontend
-
-```bash
-cd frontend
 cp .env.example .env        # fill in required values
 npm install
 npm run dev                 # starts on http://localhost:5173
 ```
 
+> Make sure the backend API (separate repo) is running and `VITE_API_URL` points to it.
+
 ---
 
 ## Environment Variables
 
-### Backend (`backend/.env`)
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `MONGODB_URI` | ✅ | MongoDB Atlas connection string |
-| `JWT_SECRET` | ✅ | Access token secret (min 64 chars) |
-| `JWT_REFRESH_SECRET` | ✅ | Refresh token secret (min 64 chars) |
-| `PORT` | | Server port (default: 5000) |
-| `NODE_ENV` | | `development` or `production` |
-| `ALLOWED_ORIGINS` | | Comma-separated CORS origins |
-
-### Frontend (`frontend/.env`)
+### Frontend (`.env`)
 
 | Variable | Required | Description |
 |----------|----------|-------------|
@@ -135,17 +111,6 @@ npm run dev                 # starts on http://localhost:5173
 ---
 
 ## Available Scripts
-
-### Backend
-
-```bash
-npm run dev       # Start with nodemon (hot reload)
-npm start         # Start in production mode
-npm run lint      # ESLint
-npm run seed      # Seed database with sample data
-```
-
-### Frontend
 
 ```bash
 npm run dev       # Vite dev server with HMR
@@ -180,7 +145,6 @@ Rate limits: auth endpoints 20 req/15 min (hard: 500), API endpoints 300 req/15 
 GitHub Actions runs on every push and pull request to `main`:
 
 1. **Frontend** — `npm ci` → `npm run lint` → `npm run build`
-2. **Backend** — `npm ci` → `npm run lint`
 
 ---
 
