@@ -1,6 +1,7 @@
+import { memo } from 'react'
 import { Card, CardActionArea, CardContent, Typography, Box, LinearProgress, Chip } from '@mui/material'
 
-export default function SubjectCard({ subject, progress = 0, topicsCount, onClick }) {
+function SubjectCard({ subject, progress = 0, topicsCount, onClick }) {
   return (
     <Card sx={{
       background: subject.bgGradient,
@@ -44,3 +45,5 @@ export default function SubjectCard({ subject, progress = 0, topicsCount, onClic
     </Card>
   )
 }
+
+export default memo(SubjectCard)

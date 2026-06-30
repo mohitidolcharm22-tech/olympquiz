@@ -54,9 +54,7 @@ export default function AchievementsPage() {
             <Typography variant="h6" fontWeight={700} sx={{ color: 'white', mb: 0.25 }}>{user?.name}</Typography>
             <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.85)' }}>⚡ {user?.xp?.toLocaleString()} XP Total</Typography>
             <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-              <Chip label={`🔥 ${user?.streak} day streak`} size="small"
-                sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white', fontWeight: 600 }} />
-              <Chip label={`${earnedBadges.size} badges`} size="small"
+              <Chip label={`🏆 ${earnedBadges.size} badges earned`} size="small"
                 sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white', fontWeight: 600 }} />
             </Box>
           </Box>

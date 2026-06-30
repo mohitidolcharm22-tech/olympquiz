@@ -1,8 +1,9 @@
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useSelector } from 'react-redux'
-import { Box, Grid, Typography, Chip, InputAdornment, TextField, CircularProgress, Alert } from '@mui/material'
-import { useState, useEffect } from 'react'
+import { Box, Grid, Typography, Chip, InputAdornment, TextField, CircularProgress, Alert, Button } from '@mui/material'
+import { useState, useEffect, useMemo } from 'react'
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded'
+import ClearRoundedIcon from '@mui/icons-material/ClearRounded'
 import QuizCard from '../../components/common/QuizCard'
 import { quizzesApi } from '../../services/apiCatalog'
 
@@ -21,9 +22,14 @@ const difficultyFilters = [
 ]
 
 export default function QuizListPage() {
-  const location  = useLocation()
+  const [searchParams, setSearchParams] = useSearchParams()
   const navigate  = useNavigate()
   const attemptedQuizIds = useSelector(s => s.quiz.attemptedQuizIds)
+
+  // Topic filter comes from the URL (?topicId=&topicName=) so the link is
+  // shareable and survives a reload. TopicsPage navigates here with these params.
+  const topicId   = searchParams.get('topicId')   || ''
+  const topicName = searchParams.get('topicName') || ''
 
   const [allQuizzes, setAllQuizzes]       = useState([])
   const [completedIds, setCompletedIds]   = useState(new Set())
@@ -33,11 +39,14 @@ export default function QuizListPage() {
   const [difficulty, setDifficulty]       = useState('')
   const [search, setSearch]               = useState('')
 
-  // Load quizzes and my attempts together
-  useEffect(() => {
+  // Load quizzes and my attempts together. When a topicId filter is active the
+  // server-side filter narrows the result; otherwise we fetch everything.
+  const load = () => {
     setLoading(true)
+    setError('')
+    const params = topicId ? { topicId } : {}
     Promise.all([
-      quizzesApi.getAll(),
+      quizzesApi.getAll(params),
       quizzesApi.getMyAttempts(),
     ])
       .then(([quizData, attemptsData]) => {
@@ -47,15 +56,24 @@ export default function QuizListPage() {
       })
       .catch(() => setError('Failed to load quizzes.'))
       .finally(() => setLoading(false))
-  }, [])
+  }
 
-  const filtered = allQuizzes.filter(q => {
-    const subjectMatch = !subjectName ||
-      q.subjectId?.name?.toLowerCase().includes(subjectName)
-    const diffMatch    = !difficulty || q.difficulty === difficulty
-    const searchMatch  = !search || q.title.toLowerCase().includes(search.toLowerCase())
-    return subjectMatch && diffMatch && searchMatch
-  })
+  useEffect(() => { load() }, [topicId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const clearTopicFilter = () => {
+    setSearchParams({}, { replace: true })
+  }
+
+  const filtered = useMemo(() => {
+    const searchLc = search.toLowerCase()
+    return allQuizzes.filter(q => {
+      const subjectMatch = !subjectName ||
+        q.subjectId?.name?.toLowerCase().includes(subjectName)
+      const diffMatch    = !difficulty || q.difficulty === difficulty
+      const searchMatch  = !searchLc || q.title.toLowerCase().includes(searchLc)
+      return subjectMatch && diffMatch && searchMatch
+    })
+  }, [allQuizzes, subjectName, difficulty, search])
 
   const handleStartQuiz = (quiz) => {
     if (completedIds.has(String(quiz._id))) {
@@ -70,6 +88,20 @@ export default function QuizListPage() {
       <Typography variant="h5" fontWeight={800} sx={{ mb: 0.5 }}>🎯 Quizzes</Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>Test your knowledge and earn XP!</Typography>
 
+      {topicId && (
+        <Alert
+          severity="info"
+          sx={{ mb: 2, borderRadius: '12px' }}
+          action={
+            <Button color="inherit" size="small" startIcon={<ClearRoundedIcon />} onClick={clearTopicFilter}>
+              Show all
+            </Button>
+          }
+        >
+          Showing quizzes for topic <strong>{topicName || 'selected topic'}</strong>
+        </Alert>
+      )}
+
       <TextField
         fullWidth size="small" placeholder="Search quizzes..."
         value={search} onChange={e => setSearch(e.target.value)}
@@ -77,26 +109,38 @@ export default function QuizListPage() {
         sx={{ mb: 2, '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
       />
 
-      <Box sx={{ display: 'flex', gap: 1, overflowX: 'auto', pb: 0.5, mb: 1.5, '&::-webkit-scrollbar': { display: 'none' } }}>
-        {subjectFilters.map(f => (
-          <Chip key={f.value} label={`${f.icon} ${f.label}`} onClick={() => setSubjectName(f.value)}
-            variant={subjectName === f.value ? 'filled' : 'outlined'} color={subjectName === f.value ? 'primary' : 'default'}
-            sx={{ flexShrink: 0, fontWeight: subjectName === f.value ? 700 : 500, borderRadius: '10px', cursor: 'pointer' }} />
-        ))}
-      </Box>
+      {!topicId && (
+        <>
+          <Box sx={{ display: 'flex', gap: 1, overflowX: 'auto', pb: 0.5, mb: 1.5, '&::-webkit-scrollbar': { display: 'none' } }}>
+            {subjectFilters.map(f => (
+              <Chip key={f.value} label={`${f.icon} ${f.label}`} onClick={() => setSubjectName(f.value)}
+                variant={subjectName === f.value ? 'filled' : 'outlined'} color={subjectName === f.value ? 'primary' : 'default'}
+                sx={{ flexShrink: 0, fontWeight: subjectName === f.value ? 700 : 500, borderRadius: '10px', cursor: 'pointer' }} />
+            ))}
+          </Box>
 
-      <Box sx={{ display: 'flex', gap: 1, overflowX: 'auto', pb: 0.5, mb: 3, '&::-webkit-scrollbar': { display: 'none' } }}>
-        {difficultyFilters.map(f => (
-          <Chip key={f.value} label={f.label || 'All'} size="small" onClick={() => setDifficulty(f.value)}
-            variant={difficulty === f.value ? 'filled' : 'outlined'}
-            color={difficulty === f.value
-              ? f.value === 'easy' ? 'success' : f.value === 'medium' ? 'warning' : f.value === 'hard' ? 'error' : 'primary'
-              : 'default'}
-            sx={{ flexShrink: 0, fontWeight: difficulty === f.value ? 700 : 500, borderRadius: '8px', cursor: 'pointer' }} />
-        ))}
-      </Box>
+          <Box sx={{ display: 'flex', gap: 1, overflowX: 'auto', pb: 0.5, mb: 3, '&::-webkit-scrollbar': { display: 'none' } }}>
+            {difficultyFilters.map(f => (
+              <Chip key={f.value} label={f.label || 'All'} size="small" onClick={() => setDifficulty(f.value)}
+                variant={difficulty === f.value ? 'filled' : 'outlined'}
+                color={difficulty === f.value
+                  ? f.value === 'easy' ? 'success' : f.value === 'medium' ? 'warning' : f.value === 'hard' ? 'error' : 'primary'
+                  : 'default'}
+                sx={{ flexShrink: 0, fontWeight: difficulty === f.value ? 700 : 500, borderRadius: '8px', cursor: 'pointer' }} />
+            ))}
+          </Box>
+        </>
+      )}
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {error && (
+        <Alert
+          severity="error"
+          sx={{ mb: 2 }}
+          action={<Button color="inherit" size="small" onClick={load}>Retry</Button>}
+        >
+          {error}
+        </Alert>
+      )}
 
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', pt: 4 }}><CircularProgress /></Box>

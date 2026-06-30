@@ -15,6 +15,7 @@ import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded'
 import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded'
 import MenuRoundedIcon from '@mui/icons-material/MenuRounded'
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded'
+import GroupsRoundedIcon from '@mui/icons-material/GroupsRounded'
 import { logoutUser } from '../../store/slices/authSlice'
 import { toggleMobileSidebar, closeMobileSidebar } from '../../store/slices/uiSlice'
 
@@ -24,6 +25,7 @@ const navItems = [
   { label: 'Dashboard', icon: <DashboardRoundedIcon />, path: '/teacher/dashboard' },
   { label: 'Content', icon: <LibraryBooksRoundedIcon />, path: '/teacher/content' },
   { label: 'Quizzes', icon: <QuizRoundedIcon />, path: '/teacher/quizzes' },
+  { label: 'Classes',       icon: <GroupsRoundedIcon />,       path: '/teacher/classes' },
   { label: 'Reports',       icon: <BarChartRoundedIcon />,     path: '/teacher/reports' },
   { label: 'Badges',        icon: <EmojiEventsRoundedIcon />,  path: '/teacher/badges' },
   { label: 'Communication', icon: <CampaignRoundedIcon />,     path: '/teacher/communication' },

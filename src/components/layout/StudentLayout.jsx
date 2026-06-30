@@ -2,26 +2,31 @@ import { useState } from 'react'
 import { useNavigate, useLocation, Outlet } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import {
-  Box, AppBar, Toolbar, Typography, Avatar, IconButton, Badge,
-  BottomNavigation, BottomNavigationAction, Drawer, List, ListItem,
+  Box, AppBar, Toolbar, Typography, Avatar, IconButton,
+  BottomNavigation, BottomNavigationAction, List, ListItem,
   ListItemIcon, ListItemText, useMediaQuery, useTheme, Divider, Menu, MenuItem,
+  Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button,
+  FormControl, InputLabel, Select, Alert, Snackbar,
 } from '@mui/material'
 import HomeRoundedIcon from '@mui/icons-material/HomeRounded'
 import MenuBookRoundedIcon from '@mui/icons-material/MenuBookRounded'
 import QuizRoundedIcon from '@mui/icons-material/QuizRounded'
 import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded'
 import AccountCircleRoundedIcon from '@mui/icons-material/AccountCircleRounded'
-import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded'
 import LeaderboardRoundedIcon from '@mui/icons-material/LeaderboardRounded'
 import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded'
+import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded'
+import FeedbackRoundedIcon from '@mui/icons-material/FeedbackRounded'
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded'
 import MenuRoundedIcon from '@mui/icons-material/MenuRounded'
 import { logoutUser } from '../../store/slices/authSlice'
+import { feedbackApi } from '../../services/apiCatalog'
 
 const navItems = [
   { label: 'Home', icon: <HomeRoundedIcon />, path: '/student/dashboard' },
   { label: 'Learn', icon: <MenuBookRoundedIcon />, path: '/student/subjects' },
   { label: 'Quiz', icon: <QuizRoundedIcon />, path: '/student/quizzes' },
+  { label: 'Leaders', icon: <LeaderboardRoundedIcon />, path: '/student/leaderboard' },
   { label: 'Progress', icon: <TrendingUpRoundedIcon />, path: '/student/progress' },
   { label: 'Rewards', icon: <EmojiEventsRoundedIcon />, path: '/student/achievements' },
 ]
@@ -33,8 +38,47 @@ export default function StudentLayout() {
   const location = useLocation()
   const dispatch = useDispatch()
   const { user } = useSelector(s => s.auth)
-  const { unreadCount } = useSelector(s => s.notifications)
   const [anchorEl, setAnchorEl] = useState(null)
+
+  // Feedback dialog state
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
+  const [feedbackTitle, setFeedbackTitle] = useState('')
+  const [feedbackCategory, setFeedbackCategory] = useState('general')
+  const [feedbackDescription, setFeedbackDescription] = useState('')
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false)
+  const [feedbackError, setFeedbackError] = useState('')
+  const [feedbackSuccess, setFeedbackSuccess] = useState(false)
+
+  const openFeedback = () => {
+    setFeedbackTitle('')
+    setFeedbackCategory('general')
+    setFeedbackDescription('')
+    setFeedbackError('')
+    setFeedbackOpen(true)
+    setAnchorEl(null)
+  }
+
+  const submitFeedback = async () => {
+    if (!feedbackTitle.trim()) {
+      setFeedbackError('Please enter a short title')
+      return
+    }
+    setFeedbackSubmitting(true)
+    setFeedbackError('')
+    try {
+      await feedbackApi.create({
+        title: feedbackTitle.trim(),
+        description: feedbackDescription.trim() || undefined,
+        category: feedbackCategory,
+      })
+      setFeedbackOpen(false)
+      setFeedbackSuccess(true)
+    } catch (e) {
+      setFeedbackError(e?.response?.data?.message || 'Failed to send feedback')
+    } finally {
+      setFeedbackSubmitting(false)
+    }
+  }
 
   const currentTab = navItems.findIndex(item => location.pathname.startsWith(item.path))
 
@@ -73,11 +117,6 @@ export default function StudentLayout() {
               </Typography>
             </Box>
           )}
-          <IconButton onClick={() => navigate('/student/notifications')} sx={{ mr: 0.5 }}>
-            <Badge badgeContent={unreadCount} color="error">
-              <NotificationsRoundedIcon />
-            </Badge>
-          </IconButton>
           <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
             <Avatar sx={{ width: 34, height: 34, bgcolor: user?.avatarColor || '#6C63FF', fontSize: '0.8rem', fontWeight: 700 }}>
               {user?.avatar}
@@ -101,11 +140,72 @@ export default function StudentLayout() {
           <ListItemIcon><TrendingUpRoundedIcon fontSize="small" /></ListItemIcon>
           My Progress
         </MenuItem>
+        <MenuItem onClick={() => { navigate('/student/attempts'); setAnchorEl(null) }}>
+          <ListItemIcon><HistoryRoundedIcon fontSize="small" /></ListItemIcon>
+          Attempt History
+        </MenuItem>
+        <MenuItem onClick={openFeedback}>
+          <ListItemIcon><FeedbackRoundedIcon fontSize="small" /></ListItemIcon>
+          Send Feedback
+        </MenuItem>
         <MenuItem onClick={handleLogout}>
           <ListItemIcon><LogoutRoundedIcon fontSize="small" /></ListItemIcon>
           Logout
         </MenuItem>
       </Menu>
+
+      {/* Feedback Dialog */}
+      <Dialog open={feedbackOpen} onClose={() => setFeedbackOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>Send Feedback</DialogTitle>
+        <DialogContent>
+          {feedbackError && <Alert severity="error" sx={{ mb: 2 }}>{feedbackError}</Alert>}
+          <FormControl fullWidth size="small" sx={{ mb: 2, mt: 1 }}>
+            <InputLabel id="feedback-category-label">Category</InputLabel>
+            <Select
+              labelId="feedback-category-label"
+              label="Category"
+              value={feedbackCategory}
+              onChange={(e) => setFeedbackCategory(e.target.value)}
+            >
+              <MenuItem value="bug">🐛 Bug</MenuItem>
+              <MenuItem value="suggestion">💡 Suggestion</MenuItem>
+              <MenuItem value="content">📚 Content</MenuItem>
+              <MenuItem value="praise">🎉 Praise</MenuItem>
+              <MenuItem value="general">📝 General</MenuItem>
+            </Select>
+          </FormControl>
+          <TextField
+            fullWidth size="small" label="Title" required
+            value={feedbackTitle}
+            onChange={(e) => setFeedbackTitle(e.target.value)}
+            sx={{ mb: 2 }}
+            inputProps={{ maxLength: 120 }}
+          />
+          <TextField
+            fullWidth size="small" label="Details (optional)" multiline minRows={3}
+            value={feedbackDescription}
+            onChange={(e) => setFeedbackDescription(e.target.value)}
+            inputProps={{ maxLength: 1000 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setFeedbackOpen(false)} disabled={feedbackSubmitting}>Cancel</Button>
+          <Button variant="contained" onClick={submitFeedback} disabled={feedbackSubmitting}>
+            {feedbackSubmitting ? 'Sending…' : 'Send'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        open={feedbackSuccess}
+        autoHideDuration={3500}
+        onClose={() => setFeedbackSuccess(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="success" variant="filled" onClose={() => setFeedbackSuccess(false)}>
+          Thanks! Your feedback has been sent.
+        </Alert>
+      </Snackbar>
 
       {/* Main Content */}
       <Box sx={{ flex: 1, pb: isMobile ? 8 : 0, overflow: 'auto' }}>

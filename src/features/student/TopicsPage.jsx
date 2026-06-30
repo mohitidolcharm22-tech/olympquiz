@@ -19,13 +19,18 @@ export default function TopicsPage() {
   const [completedLessonIds, setCompletedLessonIds] = useState(new Set())
   const [loading, setLoading]           = useState(true)
   const [error, setError]               = useState('')
+  const [progressWarning, setProgressWarning] = useState(false)
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true)
+    setError('')
+    setProgressWarning(false)
+    let progressFailed = false
     Promise.all([
       subjectsApi.getOne(subjectId),
       subjectsApi.getTopics(subjectId),
-      quizzesApi.getMyAttempts().catch(() => ({ data: { attempts: [] } })),
-      progressApi.getCompletedLessons().catch(() => ({ data: { user: { completedLessons: [] } } })),
+      quizzesApi.getMyAttempts().catch(() => { progressFailed = true; return { data: { attempts: [] } } }),
+      progressApi.getCompletedLessons().catch(() => { progressFailed = true; return { data: { user: { completedLessons: [] } } } }),
     ])
       .then(([subData, topData, attData, progData]) => {
         setSubject(subData.data.subject)
@@ -41,16 +46,26 @@ export default function TopicsPage() {
         // Build set of completed lesson IDs
         const doneLessons = progData.data?.user?.completedLessons || []
         setCompletedLessonIds(new Set(doneLessons.map(String)))
+        setProgressWarning(progressFailed)
       })
       .catch(() => setError('Failed to load subject data.'))
       .finally(() => setLoading(false))
-  }, [subjectId])
+  }
+
+  useEffect(() => { load() }, [subjectId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) return (
     <Box sx={{ display: 'flex', justifyContent: 'center', pt: 8 }}><CircularProgress /></Box>
   )
   if (error) return (
-    <Box sx={{ p: 3 }}><Alert severity="error">{error}</Alert></Box>
+    <Box sx={{ p: 3 }}>
+      <Alert
+        severity="error"
+        action={<Button color="inherit" size="small" onClick={load}>Retry</Button>}
+      >
+        {error}
+      </Alert>
+    </Box>
   )
   if (!subject) return (
     <Box sx={{ p: 3 }}><Typography>Subject not found</Typography></Box>
@@ -77,18 +92,33 @@ export default function TopicsPage() {
         </CardContent>
       </Card>
 
+      {progressWarning && (
+        <Alert
+          severity="warning"
+          sx={{ mb: 2, borderRadius: '12px' }}
+          action={<Button color="inherit" size="small" onClick={load}>Retry</Button>}
+        >
+          Couldn't load your progress data — completion badges below may be out of date.
+        </Alert>
+      )}
+
       {/* Topics Grid — 2 columns on desktop, 1 on mobile */}
       <Typography variant="h6" fontWeight={700} sx={{ mb: 1.5 }}>Topics</Typography>
       <Grid container spacing={2}>
         {topics.map((topic) => {
           const quizDone = completedTopicIds.has(topic._id?.toString())
           const totalLessons = topic.lessonCount || 0
-          const doneLessons = totalLessons > 0
-            ? [...completedLessonIds].filter(id => false).length  // placeholder; topics don't know lesson IDs here
-            : 0
+          const lessonIds    = topic.lessonIds || []
+          const doneLessons  = lessonIds.filter(id => completedLessonIds.has(String(id))).length
+          const allLessonsDone = totalLessons > 0 && doneLessons === totalLessons
+          const topicComplete  = allLessonsDone && quizDone
           return (
             <Grid item xs={12} sm={6} key={topic._id}>
-              <Card sx={{ border: '1px solid transparent', height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <Card sx={{
+                border: '2px solid',
+                borderColor: topicComplete ? 'success.main' : 'transparent',
+                height: '100%', display: 'flex', flexDirection: 'column',
+              }}>
                 <CardActionArea onClick={() => navigate(`/student/topics/${topic._id}/lessons`)}>
                   <CardContent sx={{ p: 2 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -105,8 +135,17 @@ export default function TopicsPage() {
                             variant="outlined" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 600 }} />
                         </Box>
                         <Typography variant="caption" color="text.secondary">
-                          {totalLessons > 0 ? `${totalLessons} lessons` : 'No lessons yet'} · Grades: {topic.grade?.join(', ')}
+                          {totalLessons > 0
+                            ? `${doneLessons} / ${totalLessons} lessons`
+                            : 'No lessons yet'} · Grades: {topic.grade?.join(', ')}
                         </Typography>
+                        {totalLessons > 0 && (
+                          <LinearProgress
+                            variant="determinate"
+                            value={(doneLessons / totalLessons) * 100}
+                            sx={{ mt: 0.75, height: 6, borderRadius: '100px' }}
+                          />
+                        )}
                       </Box>
                     </Box>
                   </CardContent>
@@ -120,13 +159,19 @@ export default function TopicsPage() {
                   {!quizDone && (
                     <Button variant="contained" size="small" color="success"
                       startIcon={<QuizRoundedIcon />}
-                      onClick={() => navigate('/student/quizzes', { state: { subjectId } })}
+                      onClick={() => navigate(`/student/quizzes?topicId=${topic._id}&topicName=${encodeURIComponent(topic.name)}`)}
                       sx={{ borderRadius: '10px', fontSize: '0.75rem' }}>
                       Appear for Quizzes
                     </Button>
                   )}
+                  {allLessonsDone && (
+                    <Chip label="📚 Lessons Done" color="success" size="small" variant="outlined" sx={{ fontWeight: 700 }} />
+                  )}
                   {quizDone && (
                     <Chip label="✅ Quiz Done" color="success" size="small" sx={{ fontWeight: 700 }} />
+                  )}
+                  {topicComplete && (
+                    <Chip label="🎉 Topic Complete" color="success" size="small" sx={{ fontWeight: 800 }} />
                   )}
                 </Box>
               </Card>

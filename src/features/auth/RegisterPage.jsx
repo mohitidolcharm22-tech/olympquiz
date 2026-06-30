@@ -13,7 +13,7 @@ import { setTheme } from '../../store/slices/uiSlice'
 
 const steps = ['Account Type', 'Personal Info', 'Credentials']
 
-const GRADES = ['Nursery', 'KG', '1', '2', '3', '4', '5']
+const GRADES = ['Nursery', 'KG', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
 
 const roleRoutes = {
   student: '/student/dashboard',

@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { Box, Avatar, Typography, Tooltip } from '@mui/material'
 
 const badgeColors = {
@@ -24,7 +25,7 @@ const badgeNames = {
   'first-quiz': 'First Quiz!',
 }
 
-export default function BadgeCard({ badgeId, size = 'md', showLabel = false }) {
+export default memo(function BadgeCard({ badgeId, size = 'md', showLabel = false }) {
   const sizes = { sm: 32, md: 44, lg: 64, xl: 80 }
   const fontSizes = { sm: '1rem', md: '1.4rem', lg: '2rem', xl: '2.5rem' }
   const s = sizes[size] || 44
@@ -49,4 +50,4 @@ export default function BadgeCard({ badgeId, size = 'md', showLabel = false }) {
       </Box>
     </Tooltip>
   )
-}
+})

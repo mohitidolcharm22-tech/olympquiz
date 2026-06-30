@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
@@ -86,6 +86,15 @@ export default function QuizResultPage() {
   const passingScore = result.quiz?.passingScore ?? 60
   const isPassed     = result.passed     ?? (score >= passingScore)
 
+  // Build a lookup map once — question-review row count × quiz size was O(M×N).
+  const questionById = useMemo(() => {
+    const map = new Map()
+    for (const q of result.quiz?.questions ?? []) {
+      map.set(String(q._id ?? q.id), q)
+    }
+    return map
+  }, [result.quiz?.questions])
+
   const getScoreColor = (s) => s >= 90 ? '#10B981' : s >= 60 ? '#F59E0B' : '#EF4444'
   const getGrade = (s) => s >= 90 ? 'A+' : s >= 80 ? 'A' : s >= 70 ? 'B' : s >= 60 ? 'C' : 'F'
 
@@ -133,7 +142,7 @@ export default function QuizResultPage() {
         <CardContent sx={{ p: 3 }}>
           <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>📋 Question Review</Typography>
           {questionResults?.map((qr, idx) => {
-            const qData = result.quiz?.questions?.find(q => (q._id ?? q.id) === qr.questionId || String(q._id ?? q.id) === String(qr.questionId))
+            const qData = questionById.get(String(qr.questionId))
             return (
               <Box key={idx} sx={{ mb: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>

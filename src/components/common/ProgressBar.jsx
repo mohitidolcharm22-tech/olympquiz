@@ -1,6 +1,7 @@
+import { memo } from 'react'
 import { Box, Typography, LinearProgress, Chip } from '@mui/material'
 
-export default function ProgressBar({ value, label, color = 'primary', showLabel = true, height = 8, suffix = '%' }) {
+function ProgressBar({ value, label, color = 'primary', showLabel = true, height = 8, suffix = '%' }) {
   return (
     <Box>
       {showLabel && (
@@ -23,3 +24,5 @@ export default function ProgressBar({ value, label, color = 'primary', showLabel
     </Box>
   )
 }
+
+export default memo(ProgressBar)

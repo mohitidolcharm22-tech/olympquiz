@@ -49,34 +49,24 @@ export default function QuizPage() {
     }
   }, [blocker])
 
-  // First: check if already attempted, then load fresh quiz data
+  // Load fresh quiz data. `alreadyAttempted` ships in the same response so
+  // we don't need a separate getMyAttempts round-trip just to gate retakes.
   useEffect(() => {
     let cancelled = false
     setLoadingCheck(true)
 
-    const loadQuiz = () =>
-      quizzesApi.getOne(quizId)
-        .then(d => {
-          if (cancelled) return
-          const quiz = d.data.quiz
-          dispatch(startQuiz({ ...quiz, id: quiz._id }))
-        })
-        .catch(() => { if (!cancelled) navigate('/student/quizzes') })
-        .finally(() => { if (!cancelled) setLoadingCheck(false) })
-
-    quizzesApi.getMyAttempts()
-      .then(data => {
+    quizzesApi.getOne(quizId)
+      .then(d => {
         if (cancelled) return
-        const attempts = data.data.attempts ?? []
-        const done = attempts.some(a => String(a.quizId?._id ?? a.quizId) === String(quizId))
-        if (done) {
+        const quiz = d.data.quiz
+        if (quiz.alreadyAttempted) {
           setAlreadyAttempted(true)
-          setLoadingCheck(false)
         } else {
-          loadQuiz()
+          dispatch(startQuiz({ ...quiz, id: quiz._id }))
         }
       })
-      .catch(() => { if (!cancelled) loadQuiz() })
+      .catch(() => { if (!cancelled) navigate('/student/quizzes') })
+      .finally(() => { if (!cancelled) setLoadingCheck(false) })
 
     return () => { cancelled = true }
   }, [quizId]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -87,6 +77,38 @@ export default function QuizPage() {
     }
   }, [quizResult, navigate, quizId])
 
+  // Submit + normalise the server response into the shape QuizResultPage expects,
+  // and refresh the Redux user so the dashboard sees the new XP/level/stats.
+  const submitAndStoreResult = async (answersArray, timeTaken) => {
+    try {
+      const data = await quizzesApi.submit(quizId, answersArray, timeTaken)
+      const { attempt, score, passed, xpEarned, quiz } = data.data
+      dispatch(setQuizResult({
+        score,
+        passed,
+        xpEarned,
+        timeTaken:       attempt.timeTaken ?? timeTaken,
+        correct:         attempt.answers?.filter(a => a.correct).length ?? 0,
+        total:           quiz?.questions?.length ?? activeQuiz?.questions?.length ?? 0,
+        quizTitle:       quiz?.title ?? activeQuiz?.title ?? '',
+        questionResults: (attempt.answers ?? []).map(a => ({
+          questionId: String(a.questionId),
+          isCorrect:  a.correct,
+          given:      a.selected,
+          correct:    quiz?.questions?.find(q => String(q._id) === String(a.questionId))?.correctAnswer ?? '',
+        })),
+        quiz: {
+          title:        quiz?.title ?? activeQuiz?.title ?? '',
+          passingScore: quiz?.passingScore ?? 60,
+          questions:    quiz?.questions ?? [],
+        },
+      }))
+      api.get('/auth/me').then(res => dispatch(updateUser(res.data.data.user))).catch(() => {})
+    } catch {
+      dispatch(submitQuiz()) // fallback: local scoring
+    }
+  }
+
   useEffect(() => {
     const timer = setInterval(() => {
       if (timeRemaining > 0) dispatch(tickTimer())
@@ -94,13 +116,11 @@ export default function QuizPage() {
         clearInterval(timer)
         const timeTaken = activeQuiz ? activeQuiz.durationMinutes * 60 : 0
         const answersArray = Object.entries(answers).map(([questionId, selected]) => ({ questionId, selected }))
-        quizzesApi.submit(quizId, answersArray, timeTaken)
-          .then(data => dispatch(setQuizResult(data.data)))
-          .catch(() => dispatch(submitQuiz()))
+        submitAndStoreResult(answersArray, timeTaken)
       }
     }, 1000)
     return () => clearInterval(timer)
-  }, [timeRemaining, dispatch, quizId, answers, activeQuiz])
+  }, [timeRemaining, dispatch, quizId, answers, activeQuiz]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loadingCheck) return (
     <Box sx={{ display: 'flex', justifyContent: 'center', pt: 8 }}><CircularProgress /></Box>
@@ -186,36 +206,7 @@ export default function QuizPage() {
     setShowSummaryDialog(false)
     const timeTaken = activeQuiz.durationMinutes * 60 - timeRemaining
     const answersArray = Object.entries(answers).map(([questionId, selected]) => ({ questionId, selected }))
-    try {
-      const data = await quizzesApi.submit(quizId, answersArray, timeTaken)
-      const { attempt, score, passed, xpEarned, quiz } = data.data
-      // Normalise into the shape QuizResultPage expects
-      dispatch(setQuizResult({
-        score,
-        passed,
-        xpEarned,
-        timeTaken:       attempt.timeTaken ?? timeTaken,
-        correct:         attempt.answers?.filter(a => a.correct).length ?? 0,
-        total:           quiz?.questions?.length ?? activeQuiz.questions.length,
-        quizTitle:       quiz?.title ?? activeQuiz.title,
-        questionResults: (attempt.answers ?? []).map(a => ({
-          questionId: String(a.questionId),
-          isCorrect:  a.correct,
-          given:      a.selected,
-          correct:    quiz?.questions?.find(q => String(q._id) === String(a.questionId))?.correctAnswer ?? '',
-        })),
-        quiz: {
-          title:        quiz?.title ?? activeQuiz.title,
-          passingScore: quiz?.passingScore ?? 60,
-          questions:    quiz?.questions ?? [],
-        },
-      }))
-      // Refresh the student's XP in Redux so header/dashboard shows updated value
-      // Refresh the student's stats/XP in Redux so dashboard reflects updated values
-      api.get('/auth/me').then(res => dispatch(updateUser(res.data.data.user))).catch(() => {})
-    } catch {
-      dispatch(submitQuiz()) // fallback: local scoring
-    }
+    await submitAndStoreResult(answersArray, timeTaken)
   }
 
   return (

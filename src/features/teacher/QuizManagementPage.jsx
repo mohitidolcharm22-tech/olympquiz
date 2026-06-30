@@ -5,7 +5,7 @@ import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton,
   TextField, InputAdornment, Select, MenuItem, FormControl, InputLabel,
   Dialog, DialogTitle, DialogContent, DialogActions,
-  Tooltip, Divider, LinearProgress, Alert, useTheme, useMediaQuery,
+  Tooltip, Divider, LinearProgress, Alert, useTheme, useMediaQuery, CircularProgress,
 } from '@mui/material'
 import AddRoundedIcon          from '@mui/icons-material/AddRounded'
 import SearchRoundedIcon       from '@mui/icons-material/SearchRounded'
@@ -17,7 +17,7 @@ import AutoAwesomeRoundedIcon  from '@mui/icons-material/AutoAwesomeRounded'
 import DeleteRoundedIcon       from '@mui/icons-material/DeleteRounded'
 import RefreshRoundedIcon      from '@mui/icons-material/RefreshRounded'
 import LockRoundedIcon          from '@mui/icons-material/LockRounded'
-import { quizzesApi, subjectsApi } from '../../services/apiCatalog'
+import { quizzesApi, subjectsApi, classesApi } from '../../services/apiCatalog'
 import QuestionEditor, { emptyQuestion, QUESTION_TYPES } from './QuestionEditor'
 
 const difficultyColors = { easy: 'success', medium: 'warning', hard: 'error' }
@@ -100,7 +100,72 @@ function pickRandom(arr, n) {
   return shuffled.slice(0, n).map((q, i) => ({ ...q, id: `gen-q-${Date.now()}-${i}` }))
 }
 
-const emptyQuizForm = { title: '', subjectId: '', grade: '3', difficulty: 'easy', durationMinutes: 10, xpReward: 50, quizType: 'test' }
+/* ─── Assign-to-classes dialog ─────────────────────────────────────────── */
+function AssignDialog({ quiz, classes, onClose, onSaved }) {
+  const initial = (quiz.assignedClassIds || []).map(c => c?._id || c)
+  const [selected, setSelected] = useState(initial)
+  const [saving, setSaving] = useState(false)
+  const [error, setError]   = useState('')
+
+  const handleSave = async () => {
+    setSaving(true)
+    setError('')
+    try {
+      const id = quiz._id ?? quiz.id
+      const res = await quizzesApi.update(id, { assignedClassIds: selected })
+      onSaved(res.data?.quiz || { ...quiz, assignedClassIds: selected })
+    } catch (e) {
+      setError(e.response?.data?.message || 'Failed to update assignment.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Dialog open onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '16px' } }}>
+      <DialogTitle fontWeight={800}>Assign Quiz</DialogTitle>
+      <DialogContent>
+        <Typography variant="body2" sx={{ mb: 2 }}>
+          Assign <strong>"{quiz.title}"</strong> to one or more classes. Leave empty to keep it open to all students at the matching grade.
+        </Typography>
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        <FormControl fullWidth>
+          <InputLabel>Classes</InputLabel>
+          <Select
+            multiple
+            label="Classes"
+            value={selected}
+            onChange={e => setSelected(e.target.value)}
+            renderValue={(s) => (
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                {s.length === 0 ? <em>Open to all</em> : s.map(id => {
+                  const c = classes.find(c => c._id === id)
+                  return <Chip key={id} label={c ? `${c.name} (G${c.grade})` : id} size="small" />
+                })}
+              </Box>
+            )}
+          >
+            {classes.length === 0 ? (
+              <MenuItem disabled>No classes yet — create one under Classes</MenuItem>
+            ) : classes.map(c => (
+              <MenuItem key={c._id} value={c._id}>
+                {c.name} — Grade {c.grade}{c.section ? ` · ${c.section}` : ''}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2 }}>
+        <Button onClick={onClose} variant="outlined" sx={{ borderRadius: '10px' }}>Cancel</Button>
+        <Button onClick={handleSave} variant="contained" disabled={saving} sx={{ borderRadius: '10px' }}>
+          {saving ? <CircularProgress size={20} /> : 'Save Assignment'}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  )
+}
+
+const emptyQuizForm = { title: '', subjectId: '', grade: '3', difficulty: 'easy', durationMinutes: 10, xpReward: 50, quizType: 'test', questionsToServe: '', assignedClassIds: [] }
 
 export default function QuizManagementPage() {
   const theme  = useTheme()
@@ -113,14 +178,16 @@ export default function QuizManagementPage() {
   const [loadingList,  setLoadingList]  = useState(true)
   const [listError,    setListError]    = useState('')
   const [subjects,     setSubjects]     = useState([])
+  const [classes,      setClasses]      = useState([])
   const [saveError,    setSaveError]    = useState('')
 
   useEffect(() => {
-    Promise.all([quizzesApi.getAll(), subjectsApi.getAll()])
-      .then(([qData, sData]) => {
+    Promise.all([quizzesApi.getAll(), subjectsApi.getAll(), classesApi.getAll().catch(() => ({ data: { classes: [] } }))])
+      .then(([qData, sData, cData]) => {
         setQuizList(qData.data.quizzes ?? qData.data)
         const subs = sData.data.subjects ?? sData.data
         setSubjects(subs)
+        setClasses(cData.data?.classes ?? [])
         // set default subjectId once subjects are loaded
         if (subs.length) setQuizForm(f => ({ ...f, subjectId: f.subjectId || subs[0]._id }))
       })
@@ -208,6 +275,8 @@ export default function QuizManagementPage() {
       durationMinutes: quizForm.durationMinutes,
       xpReward:        quizForm.xpReward,
       quizType:        quizForm.quizType,
+      questionsToServe: quizForm.questionsToServe ? Number(quizForm.questionsToServe) : null,
+      assignedClassIds: quizForm.assignedClassIds || [],
       questions,
     }
     try {
@@ -241,6 +310,8 @@ export default function QuizManagementPage() {
       durationMinutes: quiz.durationMinutes,
       xpReward:        quiz.xpReward,
       quizType:        quiz.quizType || 'test',
+      questionsToServe: quiz.questionsToServe ?? '',
+      assignedClassIds: (quiz.assignedClassIds || []).map(c => c?._id || c),
     })
     setAiQuestions(quiz.questions || [])
     setAiGenerated(false)
@@ -456,7 +527,7 @@ export default function QuizManagementPage() {
                 <InputLabel>Grade</InputLabel>
                 <Select value={quizForm.grade} label="Grade"
                   onChange={e => setQuizForm(f => ({ ...f, grade: e.target.value }))}>
-                  {['Nursery', 'KG', '1', '2', '3', '4', '5'].map(g => (
+                  {['Nursery', 'KG', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'].map(g => (
                     <MenuItem key={g} value={g}>{isNaN(g) ? g : `Grade ${g}`}</MenuItem>
                   ))}
                 </Select>
@@ -480,6 +551,40 @@ export default function QuizManagementPage() {
             <Grid item xs={6}>
               <TextField fullWidth type="number" label="XP Reward" value={quizForm.xpReward}
                 onChange={e => setQuizForm(f => ({ ...f, xpReward: Number(e.target.value) }))} />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField fullWidth type="number" label="Questions per attempt (random pick)"
+                helperText={`Leave blank to serve all ${aiQuestions.length || 'configured'} questions`}
+                value={quizForm.questionsToServe}
+                inputProps={{ min: 1, max: aiQuestions.length || undefined }}
+                onChange={e => setQuizForm(f => ({ ...f, questionsToServe: e.target.value }))} />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Assign to classes</InputLabel>
+                <Select
+                  multiple
+                  label="Assign to classes"
+                  value={quizForm.assignedClassIds || []}
+                  onChange={e => setQuizForm(f => ({ ...f, assignedClassIds: e.target.value }))}
+                  renderValue={(selected) => (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {selected.length === 0 ? <em>Open to all</em> : selected.map(id => {
+                        const c = classes.find(c => c._id === id)
+                        return <Chip key={id} label={c ? `${c.name} (G${c.grade})` : id} size="small" />
+                      })}
+                    </Box>
+                  )}
+                >
+                  {classes.length === 0 ? (
+                    <MenuItem disabled>No classes yet — create one under Classes</MenuItem>
+                  ) : classes.map(c => (
+                    <MenuItem key={c._id} value={c._id}>
+                      {c.name} — Grade {c.grade}{c.section ? ` · ${c.section}` : ''}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </Grid>
           </Grid>
 
@@ -612,24 +717,15 @@ export default function QuizManagementPage() {
 
       {/* ── Assign Dialog ── */}
       {assignQuiz && (
-        <Dialog open onClose={() => setAssignQuiz(null)} maxWidth="xs" fullWidth
-          PaperProps={{ sx: { borderRadius: '16px' } }}>
-          <DialogTitle fontWeight={800}>Assign Quiz</DialogTitle>
-          <DialogContent>
-            <Typography variant="body2" sx={{ mb: 2 }}>
-              Assign <strong>"{assignQuiz.title}"</strong> to a class:
-            </Typography>
-            {['3A', '3B', '4A', '4B', 'All Classes'].map(cls => (
-              <Button key={cls} fullWidth variant="outlined" sx={{ mb: 1, borderRadius: '10px', justifyContent: 'flex-start' }}
-                onClick={() => setAssignQuiz(null)}>
-                📋 {cls}
-              </Button>
-            ))}
-          </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 2 }}>
-            <Button onClick={() => setAssignQuiz(null)} variant="outlined" sx={{ borderRadius: '10px' }}>Cancel</Button>
-          </DialogActions>
-        </Dialog>
+        <AssignDialog
+          quiz={assignQuiz}
+          classes={classes}
+          onClose={() => setAssignQuiz(null)}
+          onSaved={(updated) => {
+            setQuizList(prev => prev.map(q => (q._id ?? q.id) === (updated._id ?? updated.id) ? { ...q, ...updated } : q))
+            setAssignQuiz(null)
+          }}
+        />
       )}
 
       <Dialog open={Boolean(deleteQuiz)} onClose={() => setDeleteQuiz(null)}

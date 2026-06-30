@@ -1,6 +1,7 @@
+import { memo } from 'react'
 import { Card, CardContent, Typography, Box, Avatar } from '@mui/material'
 
-export default function StatCard({ title, value, subtitle, icon, color = '#6C63FF', trend, bgGradient }) {
+function StatCard({ title, value, subtitle, icon, color = '#6C63FF', trend, bgGradient }) {
   return (
     <Card sx={{
       background: bgGradient || `linear-gradient(135deg, ${color}15 0%, ${color}08 100%)`,
@@ -39,3 +40,5 @@ export default function StatCard({ title, value, subtitle, icon, color = '#6C63F
     </Card>
   )
 }
+
+export default memo(StatCard)

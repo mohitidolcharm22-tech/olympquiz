@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useDispatch } from 'react-redux'
 import {
   Box, Typography, Button, Chip, LinearProgress,
   Accordion, AccordionSummary, AccordionDetails, Avatar, CircularProgress, Alert,
@@ -10,10 +11,12 @@ import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded'
 import RadioButtonUncheckedRoundedIcon from '@mui/icons-material/RadioButtonUncheckedRounded'
 import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded'
 import { topicsApi, lessonsApi, progressApi } from '../../services/apiCatalog'
+import { updateUser } from '../../store/slices/authSlice'
 
 export default function LessonsPage() {
   const { topicId } = useParams()
   const navigate = useNavigate()
+  const dispatch = useDispatch()
   const [expanded, setExpanded]                 = useState(null)
   const [completedLessons, setCompletedLessons] = useState(new Set())
   const [topic, setTopic]                       = useState(null)
@@ -21,7 +24,9 @@ export default function LessonsPage() {
   const [loading, setLoading]                   = useState(true)
   const [error, setError]                       = useState('')
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true)
+    setError('')
     Promise.all([
       topicsApi.getOne(topicId),
       topicsApi.getLessons(topicId),
@@ -35,7 +40,9 @@ export default function LessonsPage() {
       })
       .catch(() => setError('Failed to load lessons.'))
       .finally(() => setLoading(false))
-  }, [topicId])
+  }
+
+  useEffect(() => { load() }, [topicId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAccordionChange = (lessonId) => (_, isExpanded) => {
     setExpanded(isExpanded ? lessonId : null)
@@ -43,8 +50,13 @@ export default function LessonsPage() {
 
   const handleComplete = (lesson, idx) => {
     setCompletedLessons(prev => new Set([...prev, lesson._id]))
-    // Persist to backend (fire-and-forget)
-    lessonsApi.complete(lesson._id).catch(() => {})
+    // Persist to backend and sync Redux user with the server's new stats / xp / level.
+    lessonsApi.complete(lesson._id)
+      .then(res => {
+        const u = res?.data?.user
+        if (u) dispatch(updateUser(u))
+      })
+      .catch(() => {})
     if (idx < lessonList.length - 1) {
       setExpanded(lessonList[idx + 1]._id)
     } else {
@@ -56,7 +68,14 @@ export default function LessonsPage() {
     <Box sx={{ display: 'flex', justifyContent: 'center', pt: 8 }}><CircularProgress /></Box>
   )
   if (error) return (
-    <Box sx={{ p: 3 }}><Alert severity="error">{error}</Alert></Box>
+    <Box sx={{ p: 3 }}>
+      <Alert
+        severity="error"
+        action={<Button color="inherit" size="small" onClick={load}>Retry</Button>}
+      >
+        {error}
+      </Alert>
+    </Box>
   )
 
   if (!lessonList.length) return (
@@ -146,13 +165,13 @@ export default function LessonsPage() {
                   <Typography variant="subtitle2" fontWeight={700} noWrap>{lesson.title}</Typography>
                   <Box sx={{ display: 'flex', gap: 0.75, mt: 0.25, flexWrap: 'wrap' }}>
                     <Chip label={`📖 ${lesson.duration} min`} size="small"
-                      sx={{ height: 18, fontSize: '0.65rem', fontWeight: 600 }} />
+                      sx={{ height: 20, fontSize: '0.7rem', fontWeight: 600 }} />
                     <Chip label={`⚡ +${lesson.xp} XP`} size="small"
-                      sx={{ height: 18, fontSize: '0.65rem', fontWeight: 600,
-                        bgcolor: '#8B5CF620', color: '#8B5CF6' }} />
+                      sx={{ height: 20, fontSize: '0.72rem', fontWeight: 800,
+                        bgcolor: '#8B5CF6', color: 'white' }} />
                     {lesson.type && (
                       <Chip label={lesson.type} size="small" variant="outlined"
-                        sx={{ height: 18, fontSize: '0.65rem', textTransform: 'capitalize' }} />
+                        sx={{ height: 20, fontSize: '0.7rem', textTransform: 'capitalize' }} />
                     )}
                   </Box>
                 </Box>

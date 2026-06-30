@@ -1,13 +1,16 @@
 import { Box, Typography, Grid, Card, CardContent, Avatar, Chip, LinearProgress, Button, Dialog, DialogTitle, DialogContent, DialogActions, Tooltip, IconButton, CircularProgress, Alert, TextField, InputAdornment, Select, MenuItem, FormControl, InputLabel, Snackbar } from '@mui/material'
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import StatCard from '../../components/common/StatCard'
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded'
+import OpenInNewRoundedIcon from '@mui/icons-material/OpenInNewRounded'
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded'
 import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded'
 import { progressApi } from '../../services/apiCatalog'
 
 export default function TeacherReportsPage() {
+  const navigate = useNavigate()
   const [students, setStudents] = useState([])
   const [loading, setLoading]   = useState(true)
   const [error, setError]       = useState('')
@@ -242,6 +245,11 @@ export default function TeacherReportsPage() {
           )}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => viewStudent && navigate(`/teacher/students/${viewStudent._id}`)}
+            startIcon={<OpenInNewRoundedIcon />} sx={{ borderRadius: '10px' }}>
+            Open full report
+          </Button>
+          <Box flex={1} />
           <Button onClick={() => setViewStudent(null)} variant="contained" sx={{ borderRadius: '10px' }}>Close</Button>
         </DialogActions>
       </Dialog>

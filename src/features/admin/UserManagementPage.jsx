@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   Box, Typography, Card, CardContent, Button, Avatar, Chip, Tab, Tabs,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton,
-  TextField, InputAdornment, Dialog, DialogTitle, DialogContent, DialogActions,  CircularProgress, Alert, Tooltip, Snackbar,
+  TextField, InputAdornment, Dialog, DialogTitle, DialogContent, DialogActions,  CircularProgress, Alert, Tooltip, Snackbar, IconButton,
 } from '@mui/material'
+import { DataGrid } from '@mui/x-data-grid'
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded'
 import BlockRoundedIcon from '@mui/icons-material/BlockRounded'
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded'
@@ -18,6 +18,8 @@ export default function UserManagementPage() {
   const [tab, setTab]               = useState(0)
   const [search, setSearch]         = useState('')
   const [users, setUsers]           = useState([])
+  const [rowCount, setRowCount]     = useState(0)
+  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 })
   const [loading, setLoading]       = useState(false)
   const [error, setError]           = useState('')
   const [toggleDialog, setToggleDialog] = useState(null)
@@ -33,22 +35,31 @@ export default function UserManagementPage() {
     setLoading(true)
     setError('')
     try {
-      const params = {}
+      const params = {
+        page:  paginationModel.page + 1,   // backend is 1-based
+        limit: paginationModel.pageSize,
+      }
       if (TAB_ROLES[tab]) params.role = TAB_ROLES[tab]
       if (search)         params.search = search
       const { data } = await api.get('/auth/users', { params })
       setUsers(data.data.users)
+      setRowCount(data.pagination?.total ?? data.data.users.length)
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load users.')
     } finally {
       setLoading(false)
     }
-  }, [tab, search])
+  }, [tab, search, paginationModel])
 
   useEffect(() => {
     const timer = setTimeout(fetchUsers, 300)   // debounce search
     return () => clearTimeout(timer)
   }, [fetchUsers])
+
+  // Reset to first page whenever the filters change.
+  useEffect(() => {
+    setPaginationModel(m => ({ ...m, page: 0 }))
+  }, [tab, search])
 
   /* ── Toggle active status ────────────────────────────────────────────────── */
   const handleToggleConfirm = async () => {
@@ -81,12 +92,94 @@ export default function UserManagementPage() {
     }
   }
   /* ── Counts by role ──────────────────────────────────────────────────────── */
+  // With server-side pagination `users` only holds the current page; the true
+  // total for the active filter set is in `rowCount`.
   const counts = {
-    all:     users.length,
-    student: users.filter(u => u.role === 'student').length,
-    teacher: users.filter(u => u.role === 'teacher').length,
-    parent:  users.filter(u => u.role === 'parent').length,
+    total: rowCount,
   }
+
+  /* ── DataGrid columns ────────────────────────────────────────────────────── */
+  const userColumns = useMemo(() => [
+    {
+      field: 'name',
+      headerName: 'User',
+      flex: 1.4,
+      minWidth: 200,
+      renderCell: (params) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, height: '100%' }}>
+          <Avatar sx={{ bgcolor: params.row.avatarColor || '#1E293B', fontWeight: 700, width: 32, height: 32, fontSize: '0.8rem' }}>
+            {params.row.name?.[0]?.toUpperCase()}
+          </Avatar>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography variant="body2" fontWeight={600} noWrap>{params.row.name}</Typography>
+            {params.row.grade && (
+              <Typography variant="caption" color="text.secondary">Grade {params.row.grade}</Typography>
+            )}
+          </Box>
+        </Box>
+      ),
+    },
+    {
+      field: 'role',
+      headerName: 'Role',
+      width: 130,
+      renderCell: (params) => (
+        <Chip
+          label={`${roleIcons[params.value]} ${params.value}`}
+          size="small"
+          sx={{ bgcolor: `${roleColors[params.value]}15`, color: roleColors[params.value], fontWeight: 600, fontSize: '0.7rem', textTransform: 'capitalize' }}
+        />
+      ),
+    },
+    { field: 'email', headerName: 'Email', flex: 1.2, minWidth: 200 },
+    {
+      field: 'isActive',
+      headerName: 'Status',
+      width: 110,
+      renderCell: (params) => (
+        <Chip
+          label={params.value ? 'Active' : 'Disabled'}
+          size="small"
+          color={params.value ? 'success' : 'default'}
+          sx={{ fontWeight: 600, fontSize: '0.7rem' }}
+        />
+      ),
+    },
+    {
+      field: 'createdAt',
+      headerName: 'Joined',
+      width: 110,
+      valueFormatter: (value) => value ? new Date(value).toLocaleDateString() : '',
+    },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      width: 110,
+      sortable: false,
+      filterable: false,
+      align: 'right',
+      headerAlign: 'right',
+      renderCell: (params) => (
+        <Box>
+          <Tooltip title="Reset Password">
+            <IconButton size="small" color="info"
+              onClick={() => { setResetDialog(params.row); setNewPassword(''); setShowNewPwd(false) }}>
+              <LockResetRoundedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={params.row.isActive ? 'Disable User' : 'Enable User'}>
+            <IconButton size="small"
+              color={params.row.isActive ? 'warning' : 'success'}
+              onClick={() => setToggleDialog(params.row)}>
+              {params.row.isActive
+                ? <BlockRoundedIcon fontSize="small" />
+                : <CheckCircleRoundedIcon fontSize="small" />}
+            </IconButton>
+          </Tooltip>
+        </Box>
+      ),
+    },
+  ], [])
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1200, mx: 'auto' }}>
@@ -96,20 +189,17 @@ export default function UserManagementPage() {
       </Box>
 
       {/* Stats */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 2, mb: 3 }}>
-        {[
-          { label: 'Total Users', value: counts.all,     color: '#1E293B' },
-          { label: 'Students',    value: counts.student, color: '#3B82F6' },
-          { label: 'Teachers',    value: counts.teacher, color: '#10B981' },
-          { label: 'Parents',     value: counts.parent,  color: '#0F766E' },
-        ].map(s => (
-          <Card key={s.label} sx={{ borderRadius: '8px' }}>
-            <CardContent sx={{ p: 2 }}>
-              <Typography variant="caption" color="text.secondary">{s.label}</Typography>
-              <Typography variant="h5" fontWeight={800} sx={{ color: s.color }}>{s.value}</Typography>
-            </CardContent>
-          </Card>
-        ))}
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr' }, gap: 2, mb: 3 }}>
+        <Card sx={{ borderRadius: '8px' }}>
+          <CardContent sx={{ p: 2 }}>
+            <Typography variant="caption" color="text.secondary">
+              {TAB_ROLES[tab] ? `${TAB_ROLES[tab]}s matching filter` : 'Total users matching filter'}
+            </Typography>
+            <Typography variant="h5" fontWeight={800} sx={{ color: '#1E293B' }}>
+              {counts.total.toLocaleString()}
+            </Typography>
+          </CardContent>
+        </Card>
       </Box>
 
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
@@ -126,84 +216,29 @@ export default function UserManagementPage() {
         sx={{ mb: 2 }} />
 
       <Card sx={{ borderRadius: '8px', overflow: 'hidden' }}>
-        <TableContainer>
-          {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <Table>
-              <TableHead>
-                <TableRow sx={{ '& th': { fontWeight: 700, bgcolor: '#F8FAFC' } }}>
-                  <TableCell>User</TableCell>
-                  <TableCell>Role</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Joined</TableCell>
-                  <TableCell align="right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {users.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 4, color: 'text.secondary' }}>
-                      No users found.
-                    </TableCell>
-                  </TableRow>
-                ) : users.map(user => (
-                  <TableRow key={user._id} hover>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                        <Avatar sx={{ bgcolor: user.avatarColor || '#1E293B', fontWeight: 700, width: 36, height: 36, fontSize: '0.85rem' }}>
-                          {user.name?.[0]?.toUpperCase()}
-                        </Avatar>
-                        <Box>
-                          <Typography variant="body2" fontWeight={600}>{user.name}</Typography>
-                          {user.grade && <Typography variant="caption" color="text.secondary">Grade {user.grade}</Typography>}
-                        </Box>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Chip label={`${roleIcons[user.role]} ${user.role}`} size="small"
-                        sx={{ bgcolor: `${roleColors[user.role]}15`, color: roleColors[user.role], fontWeight: 600, fontSize: '0.7rem', textTransform: 'capitalize' }} />
-                    </TableCell>
-                    <TableCell><Typography variant="body2">{user.email}</Typography></TableCell>
-                    <TableCell>
-                      <Chip
-                        label={user.isActive ? 'Active' : 'Disabled'}
-                        size="small"
-                        color={user.isActive ? 'success' : 'default'}
-                        sx={{ fontWeight: 600, fontSize: '0.7rem' }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" color="text.secondary">
-                        {new Date(user.createdAt).toLocaleDateString()}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="right">
-                      <Tooltip title="Reset Password">
-                        <IconButton size="small" color="info"
-                          onClick={() => { setResetDialog(user); setNewPassword(''); setShowNewPwd(false) }}>
-                          <LockResetRoundedIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title={user.isActive ? 'Disable User' : 'Enable User'}>
-                        <IconButton size="small"
-                          color={user.isActive ? 'warning' : 'success'}
-                          onClick={() => setToggleDialog(user)}>
-                          {user.isActive
-                            ? <BlockRoundedIcon fontSize="small" />
-                            : <CheckCircleRoundedIcon fontSize="small" />}
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </TableContainer>
+        <Box sx={{ width: '100%', height: 600 }}>
+          <DataGrid
+            rows={users}
+            getRowId={(row) => row._id}
+            loading={loading}
+            columns={userColumns}
+            disableRowSelectionOnClick
+            paginationMode="server"
+            rowCount={rowCount}
+            paginationModel={paginationModel}
+            onPaginationModelChange={setPaginationModel}
+            pageSizeOptions={[25, 50, 100]}
+            sx={{
+              border: 0,
+              '& .MuiDataGrid-columnHeaders': { bgcolor: '#F8FAFC', fontWeight: 700 },
+              '& .MuiDataGrid-cell:focus': { outline: 'none' },
+              '& .MuiDataGrid-cell:focus-within': { outline: 'none' },
+            }}
+            slotProps={{
+              loadingOverlay: { variant: 'circular-progress', noRowsVariant: 'circular-progress' },
+            }}
+          />
+        </Box>
       </Card>
 
       {/* Reset Password Dialog */}

@@ -59,52 +59,8 @@ export default function ContentManagementPage() {
   const openMenu = (e, item) => { setMenuAnchor(e.currentTarget); setMenuItem(item) }
   const closeMenu = ()       => { setMenuAnchor(null); setMenuItem(null) }
 
-  /* ─── shared form dialog ─── */
-  const ContentFormDialog = ({ open, title }) => (
-    <Dialog open={open} onClose={closeForm} maxWidth="sm" fullWidth
-      PaperProps={{ sx: { borderRadius: '20px' } }}>
-      <DialogTitle sx={{ fontWeight: 800 }}>{title}</DialogTitle>
-      <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: '12px !important' }}>
-        <TextField fullWidth label="Title *" value={form.title}
-          onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
-        <FormControl fullWidth>
-          <InputLabel>Type</InputLabel>
-          <Select value={form.type} label="Type" onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
-            {Object.keys(typeIcons).map(t => (
-              <MenuItem key={t} value={t}>{typeIcons[t]}&nbsp;{t.charAt(0).toUpperCase() + t.slice(1)}</MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <FormControl fullWidth>
-          <InputLabel>Subject</InputLabel>
-          <Select value={form.subject} label="Subject" onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}>
-            {['Math', 'English', 'GK'].map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
-          </Select>
-        </FormControl>
-        <FormControl fullWidth>
-          <InputLabel>Grade</InputLabel>
-          <Select value={form.grade} label="Grade" onChange={e => setForm(f => ({ ...f, grade: e.target.value }))}>
-            {['Nursery', 'KG', '1', '2', '3', '4', '5'].map(g => (
-              <MenuItem key={g} value={g}>{isNaN(g) ? g : `Grade ${g}`}</MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <FormControl fullWidth>
-          <InputLabel>Status</InputLabel>
-          <Select value={form.status} label="Status" onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
-            <MenuItem value="draft">Draft</MenuItem>
-            <MenuItem value="published">Published</MenuItem>
-          </Select>
-        </FormControl>
-      </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
-        <Button onClick={closeForm} variant="outlined" sx={{ borderRadius: '10px' }}>Cancel</Button>
-        <Button onClick={handleSave} variant="contained" disabled={!form.title} sx={{ borderRadius: '10px' }}>
-          {editItem ? 'Save Changes' : 'Add Content'}
-        </Button>
-      </DialogActions>
-    </Dialog>
-  )
+  const formOpen  = showCreate || Boolean(editItem)
+  const formTitle = editItem ? '✏️ Edit Content' : '📄 Add New Content'
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1100, mx: 'auto' }}>
@@ -245,9 +201,50 @@ export default function ContentManagementPage() {
         </Box>
       )}
 
-      {/* ── Dialogs ── */}
-      <ContentFormDialog open={showCreate} title="📄 Add New Content" />
-      <ContentFormDialog open={Boolean(editItem)} title="✏️ Edit Content" />
+      {/* ── Create / Edit dialog (inline so the TextField keeps focus across keystrokes) ── */}
+      <Dialog open={formOpen} onClose={closeForm} maxWidth="sm" fullWidth
+        PaperProps={{ sx: { borderRadius: '20px' } }}>
+        <DialogTitle sx={{ fontWeight: 800 }}>{formTitle}</DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: '12px !important' }}>
+          <TextField fullWidth label="Title *" value={form.title}
+            onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
+          <FormControl fullWidth>
+            <InputLabel>Type</InputLabel>
+            <Select value={form.type} label="Type" onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
+              {Object.keys(typeIcons).map(t => (
+                <MenuItem key={t} value={t}>{typeIcons[t]}&nbsp;{t.charAt(0).toUpperCase() + t.slice(1)}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl fullWidth>
+            <InputLabel>Subject</InputLabel>
+            <Select value={form.subject} label="Subject" onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}>
+              {['Math', 'English', 'GK'].map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+            </Select>
+          </FormControl>
+          <FormControl fullWidth>
+            <InputLabel>Grade</InputLabel>
+            <Select value={form.grade} label="Grade" onChange={e => setForm(f => ({ ...f, grade: e.target.value }))}>
+              {['Nursery', 'KG', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'].map(g => (
+                <MenuItem key={g} value={g}>{isNaN(g) ? g : `Grade ${g}`}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl fullWidth>
+            <InputLabel>Status</InputLabel>
+            <Select value={form.status} label="Status" onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
+              <MenuItem value="draft">Draft</MenuItem>
+              <MenuItem value="published">Published</MenuItem>
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
+          <Button onClick={closeForm} variant="outlined" sx={{ borderRadius: '10px' }}>Cancel</Button>
+          <Button onClick={handleSave} variant="contained" disabled={!form.title} sx={{ borderRadius: '10px' }}>
+            {editItem ? 'Save Changes' : 'Add Content'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog open={Boolean(deleteDialog)} onClose={() => setDeleteDialog(null)}
         PaperProps={{ sx: { borderRadius: '16px' } }}>

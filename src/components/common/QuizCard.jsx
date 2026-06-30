@@ -1,20 +1,28 @@
+import { memo } from 'react'
 import { Card, CardContent, CardActionArea, Typography, Box, Chip, Avatar } from '@mui/material'
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded'
+import AssignmentRoundedIcon from '@mui/icons-material/AssignmentRounded'
 
-export default function QuizCard({ quiz, onClick, compact = false }) {
+function QuizCard({ quiz, onClick, compact = false }) {
   const difficultyColors = { easy: 'success', medium: 'warning', hard: 'error' }
   const completed = !!quiz.completed
+  const assigned  = Array.isArray(quiz.assignedClassIds) && quiz.assignedClassIds.length > 0
 
   return (
     <Card sx={{ height: '100%', cursor: 'pointer', opacity: completed ? 0.85 : 1, position: 'relative',
       outline: completed ? '2px solid #10B981' : 'none' }}>
-      {completed && (
-        <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 1 }}>
+      <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 1, display: 'flex', gap: 0.5 }}>
+        {assigned && !completed && (
+          <Chip icon={<AssignmentRoundedIcon sx={{ fontSize: '0.9rem !important' }} />}
+            label="Assigned" size="small" color="primary"
+            sx={{ fontWeight: 700, fontSize: '0.65rem', height: 22 }} />
+        )}
+        {completed && (
           <Chip icon={<CheckCircleRoundedIcon sx={{ fontSize: '0.9rem !important' }} />}
             label="Completed" size="small" color="success"
             sx={{ fontWeight: 700, fontSize: '0.65rem', height: 22 }} />
-        </Box>
-      )}
+        )}
+      </Box>
       <CardActionArea onClick={onClick} sx={{ height: '100%' }}>
         <CardContent sx={{ p: 2.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, mb: 1.5 }}>
@@ -27,7 +35,7 @@ export default function QuizCard({ quiz, onClick, compact = false }) {
             }}>
               {quiz.icon || quiz.subjectId?.icon || '📝'}
             </Avatar>
-            <Box sx={{ flex: 1, minWidth: 0, pr: completed ? 8 : 0 }}>
+            <Box sx={{ flex: 1, minWidth: 0, pr: (completed || assigned) ? 9 : 0 }}>
               <Typography variant="subtitle2" fontWeight={700} noWrap>{quiz.title}</Typography>
               {!compact && (
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>
@@ -53,3 +61,5 @@ export default function QuizCard({ quiz, onClick, compact = false }) {
     </Card>
   )
 }
+
+export default memo(QuizCard)

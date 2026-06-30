@@ -2,7 +2,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import {
   Box, Grid, Card, CardContent, Typography, Button, Avatar, LinearProgress,
-  Chip, List, ListItem, ListItemAvatar, ListItemText, IconButton, Divider, CircularProgress,
+  Chip, List, ListItem, ListItemAvatar, ListItemText, IconButton, Divider, CircularProgress, Alert,
 } from '@mui/material'
 import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded'
 import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded'
@@ -20,24 +20,38 @@ export default function StudentDashboard() {
   const navigate = useNavigate()
   const [subjects, setSubjects]       = useState([])
   const [recentQuizzes, setRecentQuizzes] = useState([])
+  const [subjectProgress, setSubjectProgress] = useState({})  // { [subjectId]: 0..100 }
   const [loading, setLoading]         = useState(true)
+  const [attemptsFailed, setAttemptsFailed] = useState(false)
 
   useEffect(() => {
+    let attemptsErrored = false
     Promise.all([
       subjectsApi.getAll(),
       quizzesApi.getAll(),
-    ]).then(([subData, quizData]) => {
+      quizzesApi.getMyAttempts().catch(() => { attemptsErrored = true; return { data: { attempts: [] } } }),
+    ]).then(([subData, quizData, attemptsData]) => {
       setSubjects(subData.data.subjects ?? subData.data)
       setRecentQuizzes((quizData.data.quizzes ?? quizData.data).slice(0, 4))
+      // Average quiz score per subject = a rough "how well I'm doing here" signal.
+      const bySubject = {}
+      for (const a of attemptsData.data?.attempts ?? []) {
+        const sid = String(a.quizId?.subjectId?._id ?? a.quizId?.subjectId ?? '')
+        if (!sid) continue
+        const b = bySubject[sid] ?? { total: 0, count: 0 }
+        b.total += Number(a.score ?? 0)
+        b.count += 1
+        bySubject[sid] = b
+      }
+      const progress = {}
+      for (const [sid, b] of Object.entries(bySubject)) {
+        progress[sid] = Math.round(b.total / b.count)
+      }
+      setSubjectProgress(progress)
+      setAttemptsFailed(attemptsErrored)
     }).catch(console.error)
       .finally(() => setLoading(false))
   }, [])
-
-  const nextLevelXP    = (user?.level || 1) * 500
-  const currentLevelXP = ((user?.level || 1) - 1) * 500
-  const xpInLevel      = (user?.xp || 0) - currentLevelXP
-  const xpNeeded       = nextLevelXP - currentLevelXP
-  const xpProgress     = Math.min(100, Math.max(0, xpNeeded > 0 ? (xpInLevel / xpNeeded) * 100 : 0))
 
   const handleStartQuiz = (quiz) => {
     navigate(`/student/quiz/${quiz._id ?? quiz.id}`)
@@ -71,22 +85,12 @@ export default function StudentDashboard() {
             </Box>
             <Typography sx={{ fontSize: '4rem', lineHeight: 1 }}>🎯</Typography>
           </Box>
-          {/* XP Progress */}
-          <Box sx={{ mt: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-                Level {user?.level} Progress
-              </Typography>
-              <Typography variant="caption" sx={{ color: 'white', fontWeight: 700 }}>
-                {Math.max(0, xpInLevel)} / {xpNeeded} XP
-              </Typography>
-            </Box>
-            <LinearProgress variant="determinate" value={xpProgress}
-              sx={{
-                height: 8, borderRadius: '100px',
-                bgcolor: 'rgba(255,255,255,0.3)',
-                '& .MuiLinearProgress-bar': { bgcolor: '#FFD700', borderRadius: '100px' },
-              }} />
+          {/* Total XP earned (no cap — students keep accumulating) */}
+          <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.85)' }}>Total XP earned</Typography>
+            <Typography variant="h6" sx={{ color: 'white', fontWeight: 800 }}>
+              ⚡ {(user?.xp || 0).toLocaleString()}
+            </Typography>
           </Box>
         </CardContent>
       </Card>
@@ -107,6 +111,12 @@ export default function StudentDashboard() {
         </Grid>
       </Grid>
 
+      {attemptsFailed && (
+        <Alert severity="warning" sx={{ mb: 2, borderRadius: '12px' }}>
+          Couldn't load your recent quiz attempts — subject progress percentages may be out of date.
+        </Alert>
+      )}
+
       {/* Subjects */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
         <Typography variant="h6" fontWeight={700}>📖 My Subjects</Typography>
@@ -117,7 +127,7 @@ export default function StudentDashboard() {
           <Grid item xs={12} sm={4} key={subject._id}>
             <SubjectCard
               subject={subject}
-              progress={0}
+              progress={subjectProgress[String(subject._id)] ?? 0}
               onClick={() => navigate(`/student/subjects/${subject._id}`)}
             />
           </Grid>

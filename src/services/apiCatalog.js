@@ -209,6 +209,13 @@ export const quizzesApi = {
   getAttempts: (quizId) =>
     api.get(`/quizzes/${quizId}/attempts`).then(r => r.data),
 
+  /**
+   * [Teacher/Admin] Reissue a quiz for a specific student.
+   * Deletes the student's existing attempt so they can take it again.
+   */
+  reissue: (quizId, studentId) =>
+    api.delete(`/quizzes/${quizId}/attempts/${studentId}`).then(r => r.data),
+
   /** Get global leaderboard (top 50 students by XP) */
   getLeaderboard: () =>
     api.get('/quizzes/leaderboard').then(r => r.data),
@@ -268,9 +275,9 @@ export const progressApi = {
   getStudentProgress: (studentId) =>
     api.get(`/users/${studentId}/progress`).then(r => r.data),
 
-  /** [Teacher/Admin] Get all students with their quiz stats */
-  getStudents: () =>
-    api.get('/users/students').then(r => r.data),
+  /** [Teacher/Admin] Get all students with their quiz stats. Params: { classId? } */
+  getStudents: (params = {}) =>
+    api.get('/users/students', { params }).then(r => r.data),
 
   /** [Parent] Get progress data for all linked children */
   getMyChildren: () =>
@@ -319,6 +326,47 @@ export const badgeCatalogApi = {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
+   CLASSES API  — Teacher/Admin manage class rosters
+   ══════════════════════════════════════════════════════════════════════════ */
+export const classesApi = {
+  /** [Teacher/Admin] List classes the user has access to. Params: { grade? } */
+  getAll: (params = {}) =>
+    api.get('/classes', { params }).then(r => r.data),
+
+  /** [Teacher/Admin] Get one class with full roster */
+  getOne: (id) =>
+    api.get(`/classes/${id}`).then(r => r.data),
+
+  /** [Teacher/Admin] Create a class. Payload: { name, grade, section?, description?, teacherIds?, studentIds? } */
+  create: (payload) =>
+    api.post('/classes', payload).then(r => r.data),
+
+  /** [Teacher/Admin] Update class metadata */
+  update: (id, payload) =>
+    api.patch(`/classes/${id}`, payload).then(r => r.data),
+
+  /** [Teacher/Admin] Soft-delete a class */
+  remove: (id) =>
+    api.delete(`/classes/${id}`).then(r => r.data),
+
+  /** [Teacher/Admin] Add students to a class. Payload: { studentIds: [..] } */
+  addStudents: (id, studentIds) =>
+    api.post(`/classes/${id}/students`, { studentIds }).then(r => r.data),
+
+  /** [Teacher/Admin] Remove one student from a class */
+  removeStudent: (id, studentId) =>
+    api.delete(`/classes/${id}/students/${studentId}`).then(r => r.data),
+
+  /** [Teacher/Admin] Add teachers to a class */
+  addTeachers: (id, teacherIds) =>
+    api.post(`/classes/${id}/teachers`, { teacherIds }).then(r => r.data),
+
+  /** [Admin or self] Remove a teacher from a class */
+  removeTeacher: (id, teacherId) =>
+    api.delete(`/classes/${id}/teachers/${teacherId}`).then(r => r.data),
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
    DEFAULT EXPORT — grouped by domain
    ══════════════════════════════════════════════════════════════════════════ */
 export default {
@@ -331,4 +379,5 @@ export default {
   feedback:      feedbackApi,
   progress:      progressApi,
   badgeCatalog:  badgeCatalogApi,
+  classes:       classesApi,
 }
