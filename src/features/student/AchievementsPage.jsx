@@ -4,6 +4,7 @@ import { Box, Typography, Grid, Card, CardContent, Avatar, Chip, LinearProgress,
 import BadgeCard from '../../components/common/BadgeCard'
 import { badgeDefinitions as FALLBACK_BADGES } from '../../data/index'
 import { progressApi, badgeCatalogApi } from '../../services/apiCatalog'
+import { formatDate } from '../../utils/date'
 
 export default function AchievementsPage() {
   const { user } = useSelector(s => s.auth)
@@ -110,7 +111,7 @@ export default function AchievementsPage() {
                         </Typography>
                       )}
                       <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.5 }}>
-                        Awarded by {tb.awardedBy?.name || 'Teacher'} · {tb.awardedAt ? new Date(tb.awardedAt).toLocaleDateString() : ''}
+                        Awarded by {tb.awardedBy?.name || 'Teacher'} · {formatDate(tb.awardedAt)}
                       </Typography>
                     </Box>
                   </Card>

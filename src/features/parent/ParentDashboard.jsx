@@ -7,11 +7,34 @@ import StatCard from '../../components/common/StatCard'
 import { progressApi } from '../../services/apiCatalog'
 import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded'
 
-const weeklyActivity = [
-  { day: 'Mon', lessons: 2, quizzes: 1 }, { day: 'Tue', lessons: 3, quizzes: 2 },
-  { day: 'Wed', lessons: 1, quizzes: 0 }, { day: 'Thu', lessons: 4, quizzes: 1 },
-  { day: 'Fri', lessons: 2, quizzes: 2 }, { day: 'Sat', lessons: 5, quizzes: 3 }, { day: 'Sun', lessons: 1, quizzes: 1 },
-]
+const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+// Builds the last-7-days quiz attempt count across every child, ordered
+// Mon → Sun for display.
+function buildWeeklyActivity(children) {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  // bucket by yyyy-mm-dd for the last 7 days (today inclusive)
+  const buckets = []
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today); d.setDate(today.getDate() - i)
+    buckets.push({
+      key:    d.toISOString().slice(0, 10),
+      day:    DAY_LABELS[d.getDay()],
+      quizzes: 0,
+    })
+  }
+  const idxByKey = Object.fromEntries(buckets.map((b, i) => [b.key, i]))
+
+  for (const c of children || []) {
+    for (const a of (c.recentAttempts || [])) {
+      const key = new Date(a.completedAt).toISOString().slice(0, 10)
+      if (key in idxByKey) buckets[idxByKey[key]].quizzes++
+    }
+  }
+  return buckets
+}
 
 export default function ParentDashboard() {
   const { user } = useSelector(s => s.auth)
@@ -27,6 +50,8 @@ export default function ParentDashboard() {
   }, [])
 
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', pt: 8 }}><CircularProgress /></Box>
+
+  const weeklyActivity = buildWeeklyActivity(children)
 
   const avgScore = children.length
     ? Math.round(children.reduce((sum, c) => {
@@ -132,9 +157,8 @@ export default function ParentDashboard() {
             <BarChart data={weeklyActivity}>
               <CartesianGrid strokeDasharray="3 3" stroke="#F0FDFA" />
               <XAxis dataKey="day" axisLine={false} tickLine={false} />
-              <YAxis axisLine={false} tickLine={false} />
+              <YAxis axisLine={false} tickLine={false} allowDecimals={false} />
               <Tooltip />
-              <Bar dataKey="lessons" fill="#0F766E" radius={[4, 4, 0, 0]} name="Lessons" />
               <Bar dataKey="quizzes" fill="#7C3AED" radius={[4, 4, 0, 0]} name="Quizzes" />
             </BarChart>
           </ResponsiveContainer>

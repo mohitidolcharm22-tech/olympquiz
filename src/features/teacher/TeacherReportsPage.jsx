@@ -8,6 +8,7 @@ import OpenInNewRoundedIcon from '@mui/icons-material/OpenInNewRounded'
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded'
 import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded'
 import { progressApi } from '../../services/apiCatalog'
+import { formatDate } from '../../utils/date'
 
 export default function TeacherReportsPage() {
   const navigate = useNavigate()
@@ -225,7 +226,7 @@ export default function TeacherReportsPage() {
                     <Box sx={{ minWidth: 0 }}>
                       <Typography variant="body2" fontWeight={600} noWrap>{a.quizId?.title ?? 'Quiz'}</Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {new Date(a.completedAt).toLocaleDateString()}
+                        {formatDate(a.completedAt)}
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>

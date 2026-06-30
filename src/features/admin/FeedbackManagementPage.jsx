@@ -5,6 +5,7 @@ import {
   CircularProgress, Alert,
 } from '@mui/material'
 import { feedbackApi } from '../../services/apiCatalog'
+import { formatDate } from '../../utils/date'
 import StatCard from '../../components/common/StatCard'
 
 const statusColors = { open: 'warning', 'in-review': 'info', resolved: 'success', closed: 'default' }
@@ -141,7 +142,7 @@ export default function FeedbackManagementPage() {
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" color="text.secondary">
-                        {new Date(fb.createdAt).toLocaleDateString()}
+                        {formatDate(fb.createdAt)}
                       </Typography>
                     </TableCell>
                   </TableRow>

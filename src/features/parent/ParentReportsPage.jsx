@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Box, Typography, Card, CardContent, Grid, Chip, Tab, Tabs, CircularProgress, Alert } from '@mui/material'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { progressApi } from '../../services/apiCatalog'
+import { formatDate } from '../../utils/date'
 
 export default function ParentReportsPage() {
   const [tab, setTab]         = useState(0)
@@ -143,7 +144,7 @@ export default function ParentReportsPage() {
                         <Box sx={{ minWidth: 0 }}>
                           <Typography variant="body2" fontWeight={600} noWrap>{a.quizId?.title ?? 'Quiz'}</Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {a.quizId?.subjectId?.name ?? ''} · {new Date(a.completedAt).toLocaleDateString()} · ⚡ +{a.xpEarned} XP
+                            {a.quizId?.subjectId?.name ?? ''} · {formatDate(a.completedAt)} · ⚡ +{a.xpEarned} XP
                           </Typography>
                         </Box>
                         <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>

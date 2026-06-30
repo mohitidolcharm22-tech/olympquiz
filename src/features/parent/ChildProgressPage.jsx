@@ -4,10 +4,16 @@ import {
   Box, Typography, Card, CardContent, Avatar, Chip, LinearProgress,
   Grid, Select, MenuItem, FormControl, InputLabel, CircularProgress, Alert,
   Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, InputAdornment,
+  Divider, Stack,
 } from '@mui/material'
+import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded'
+import CancelRoundedIcon      from '@mui/icons-material/CancelRounded'
+import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded'
+import VisibilityRoundedIcon  from '@mui/icons-material/VisibilityRounded'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { progressApi, badgeCatalogApi } from '../../services/apiCatalog'
+import { progressApi, badgeCatalogApi, quizzesApi } from '../../services/apiCatalog'
 import { badgeDefinitions as FALLBACK_BADGES } from '../../data/index'
+import { formatDate, formatDateTime } from '../../utils/date'
 
 export default function ChildProgressPage() {
   const { user } = useSelector(s => s.auth)
@@ -19,6 +25,24 @@ export default function ChildProgressPage() {
   const [linkUsername, setLinkUsername] = useState('')
   const [linkMsg, setLinkMsg]       = useState('')
   const [showLink, setShowLink]     = useState(false)
+
+  // Quiz review dialog state
+  const [reviewOpen, setReviewOpen]     = useState(false)
+  const [reviewLoading, setReviewLoading] = useState(false)
+  const [reviewError, setReviewError]   = useState('')
+  const [reviewAttempt, setReviewAttempt] = useState(null)
+
+  const openReview = (attemptId) => {
+    setReviewOpen(true)
+    setReviewLoading(true)
+    setReviewError('')
+    setReviewAttempt(null)
+    quizzesApi.getAttempt(attemptId)
+      .then(d => setReviewAttempt(d.data?.attempt))
+      .catch(err => setReviewError(err?.response?.data?.message || 'Failed to load attempt.'))
+      .finally(() => setReviewLoading(false))
+  }
+  const closeReview = () => { setReviewOpen(false); setReviewAttempt(null); setReviewError('') }
 
   const loadChildren = () => {
     setLoading(true)
@@ -163,21 +187,54 @@ export default function ChildProgressPage() {
                   ) : (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                       {attempts.map((a, idx) => (
-                        <Box key={idx} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          p: 1.5, bgcolor: 'action.hover', borderRadius: '10px' }}>
-                          <Box sx={{ minWidth: 0 }}>
-                            <Typography variant="body2" fontWeight={600} noWrap>{a.quizId?.title ?? 'Quiz'}</Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {new Date(a.completedAt).toLocaleDateString()} · ⚡ +{a.xpEarned} XP
-                            </Typography>
+                        <Box
+                          key={a._id ?? idx}
+                          onClick={() => a._id && openReview(a._id)}
+                          sx={{
+                            display: 'flex', flexDirection: 'column', gap: 1,
+                            p: 1.5, borderRadius: '12px',
+                            bgcolor: 'background.paper',
+                            border: '1px solid', borderColor: 'divider',
+                            cursor: a._id ? 'pointer' : 'default',
+                            transition: 'all 0.15s ease',
+                            '&:hover': a._id ? {
+                              borderColor: 'primary.main',
+                              bgcolor: 'action.hover',
+                              boxShadow: 1,
+                            } : undefined,
+                          }}
+                        >
+                          {/* Top: title + score/pass chips */}
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+                            <Box sx={{ minWidth: 0, flex: 1 }}>
+                              <Typography variant="body2" fontWeight={600} noWrap>{a.quizId?.title ?? 'Quiz'}</Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {formatDate(a.completedAt)} · ⚡ +{a.xpEarned} XP
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
+                              <Chip label={`${a.score}%`} size="small"
+                                color={a.score >= 80 ? 'success' : a.score >= 60 ? 'warning' : 'error'}
+                                sx={{ fontWeight: 700 }} />
+                              <Chip label={a.passed ? 'Passed' : 'Failed'} size="small"
+                                color={a.passed ? 'success' : 'error'} variant="outlined" />
+                            </Box>
                           </Box>
-                          <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
-                            <Chip label={`${a.score}%`} size="small"
-                              color={a.score >= 80 ? 'success' : a.score >= 60 ? 'warning' : 'error'}
-                              sx={{ fontWeight: 700 }} />
-                            <Chip label={a.passed ? 'Passed' : 'Failed'} size="small"
-                              color={a.passed ? 'success' : 'error'} variant="outlined" />
-                          </Box>
+
+                          {/* Bottom: Review button */}
+                          {a._id && (
+                            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                              <Button
+                                size="small" variant="outlined"
+                                startIcon={<VisibilityRoundedIcon />}
+                                endIcon={<ChevronRightRoundedIcon />}
+                                onClick={(e) => { e.stopPropagation(); openReview(a._id) }}
+                                sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600 }}
+                              >
+                                Review
+                              </Button>
+                            </Box>
+                          )}
                         </Box>
                       ))}
                     </Box>
@@ -209,7 +266,7 @@ export default function ChildProgressPage() {
                                 </Typography>
                               )}
                               <Typography variant="caption" color="text.disabled">
-                                By {tb.awardedBy?.name || 'Teacher'} · {tb.awardedAt ? new Date(tb.awardedAt).toLocaleDateString() : ''}
+                                By {tb.awardedBy?.name || 'Teacher'} · {formatDate(tb.awardedAt)}
                               </Typography>
                             </Box>
                           </Box>
@@ -243,6 +300,197 @@ export default function ChildProgressPage() {
           <Button onClick={handleLinkChild} variant="contained" disabled={!linkUsername} sx={{ borderRadius: '10px' }}>Link</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Quiz Review Dialog */}
+      <QuizReviewDialog
+        open={reviewOpen}
+        loading={reviewLoading}
+        error={reviewError}
+        attempt={reviewAttempt}
+        onClose={closeReview}
+      />
     </Box>
+  )
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   Quiz Review Dialog — shows every question, what the child selected,
+   what was correct, and a summary (correct / incorrect / score / time).
+   ════════════════════════════════════════════════════════════════════════ */
+function QuizReviewDialog({ open, loading, error, attempt, onClose }) {
+  const quiz = attempt?.quizId
+  const questions = quiz?.questions ?? []
+  const answers   = attempt?.answers ?? []
+
+  // Index answers by questionId for O(1) lookup
+  const answerMap = {}
+  for (const a of answers) answerMap[String(a.questionId)] = a
+
+  const correctCount   = answers.filter(a => a.correct).length
+  const incorrectCount = answers.length - correctCount
+  const unanswered     = Math.max(questions.length - answers.length, 0)
+
+  const fmtTime = (sec) => {
+    if (!sec && sec !== 0) return '—'
+    const m = Math.floor(sec / 60), s = sec % 60
+    return m > 0 ? `${m}m ${s}s` : `${s}s`
+  }
+
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md"
+      PaperProps={{ sx: { borderRadius: '16px' } }}>
+      <DialogTitle fontWeight={800}>
+        📝 Quiz Review {quiz?.title ? `— ${quiz.title}` : ''}
+      </DialogTitle>
+      <DialogContent dividers>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}><CircularProgress /></Box>
+        ) : error ? (
+          <Alert severity="error">{error}</Alert>
+        ) : !attempt ? (
+          <Alert severity="info">No attempt data available.</Alert>
+        ) : (
+          <>
+            {/* Summary */}
+            <Card variant="outlined" sx={{ borderRadius: '12px', mb: 2 }}>
+              <CardContent>
+                <Grid container spacing={2}>
+                  <Grid item xs={6} sm={3}>
+                    <Typography variant="caption" color="text.secondary">Score</Typography>
+                    <Typography variant="h5" fontWeight={800}
+                      color={attempt.score >= 80 ? 'success.main' : attempt.score >= 60 ? 'warning.main' : 'error.main'}>
+                      {attempt.score}%
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6} sm={3}>
+                    <Typography variant="caption" color="text.secondary">Result</Typography>
+                    <Box><Chip label={attempt.passed ? 'Passed' : 'Failed'} size="small"
+                      color={attempt.passed ? 'success' : 'error'} sx={{ mt: 0.5, fontWeight: 700 }} /></Box>
+                  </Grid>
+                  <Grid item xs={6} sm={3}>
+                    <Typography variant="caption" color="text.secondary">Correct / Total</Typography>
+                    <Typography variant="h6" fontWeight={700}>{correctCount} / {questions.length}</Typography>
+                  </Grid>
+                  <Grid item xs={6} sm={3}>
+                    <Typography variant="caption" color="text.secondary">Time taken</Typography>
+                    <Typography variant="h6" fontWeight={700}>{fmtTime(attempt.timeTaken)}</Typography>
+                  </Grid>
+                </Grid>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 2 }}>
+                  <Chip size="small" icon={<CheckCircleRoundedIcon />} color="success" variant="outlined"
+                    label={`${correctCount} correct`} />
+                  <Chip size="small" icon={<CancelRoundedIcon />} color="error" variant="outlined"
+                    label={`${incorrectCount} incorrect`} />
+                  {unanswered > 0 && <Chip size="small" variant="outlined" label={`${unanswered} unanswered`} />}
+                  <Chip size="small" variant="outlined"
+                    label={`⚡ +${attempt.xpEarned || 0} XP`} />
+                  {quiz?.subjectId?.name && (
+                    <Chip size="small" variant="outlined" label={quiz.subjectId.name} />
+                  )}
+                  <Chip size="small" variant="outlined"
+                    label={formatDateTime(attempt.completedAt)} />
+                </Box>
+              </CardContent>
+            </Card>
+
+            {/* Per-question breakdown */}
+            {questions.length === 0 ? (
+              <Alert severity="info">Question details are no longer available for this quiz.</Alert>
+            ) : (
+              <Stack spacing={1.5}>
+                {questions.map((q, i) => {
+                  const ans = answerMap[String(q._id)]
+                  const isCorrect   = !!ans?.correct
+                  const isAnswered  = !!ans
+                  const borderColor = !isAnswered ? 'divider' : isCorrect ? 'success.light' : 'error.light'
+                  const bgTint      = !isAnswered ? 'transparent' : isCorrect ? 'success.50' : 'error.50'
+
+                  return (
+                    <Card key={q._id || i} variant="outlined"
+                      sx={{ borderRadius: '12px', borderColor, bgcolor: bgTint }}>
+                      <CardContent sx={{ py: 1.5 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 1 }}>
+                          {isAnswered && (isCorrect
+                            ? <CheckCircleRoundedIcon fontSize="small" color="success" sx={{ mt: 0.2 }} />
+                            : <CancelRoundedIcon fontSize="small" color="error" sx={{ mt: 0.2 }} />
+                          )}
+                          <Typography variant="subtitle2" fontWeight={700} sx={{ flex: 1 }}>
+                            Q{i + 1}. {q.text}
+                          </Typography>
+                          <Chip size="small" variant="outlined" label={q.type} />
+                        </Box>
+
+                        {q.imageUrl && (
+                          <Box sx={{ mb: 1 }}>
+                            <img src={q.imageUrl} alt="" style={{ maxWidth: '100%', borderRadius: 8 }} />
+                          </Box>
+                        )}
+
+                        {/* MCQ-style options */}
+                        {(q.options?.length > 0) && (
+                          <Stack spacing={0.5} sx={{ mb: 1 }}>
+                            {q.options.map((opt, oi) => {
+                              const isUserPick   = ans?.selected === opt
+                              const isCorrectOpt = q.correctAnswer === opt
+                              const color = isCorrectOpt ? 'success.main'
+                                          : isUserPick && !isCorrectOpt ? 'error.main'
+                                          : 'text.primary'
+                              return (
+                                <Box key={oi} sx={{
+                                  display: 'flex', alignItems: 'center', gap: 1,
+                                  p: 0.75, borderRadius: '8px',
+                                  bgcolor: isCorrectOpt ? 'success.50' : isUserPick ? 'error.50' : 'transparent',
+                                  border: isUserPick || isCorrectOpt ? '1px solid' : '1px solid transparent',
+                                  borderColor: isCorrectOpt ? 'success.light' : isUserPick ? 'error.light' : 'transparent',
+                                }}>
+                                  <Typography variant="body2" sx={{ flex: 1, color }}>{opt}</Typography>
+                                  {isUserPick && <Chip size="small" label="Child's pick" />}
+                                  {isCorrectOpt && <Chip size="small" color="success" label="Correct" />}
+                                </Box>
+                              )
+                            })}
+                          </Stack>
+                        )}
+
+                        {/* Non-option questions (fillinblank / truefalse / oddoneout) — show side-by-side */}
+                        {!q.options?.length && (
+                          <Grid container spacing={1} sx={{ mb: 1 }}>
+                            <Grid item xs={6}>
+                              <Typography variant="caption" color="text.secondary">Child's answer</Typography>
+                              <Typography variant="body2" fontWeight={600}
+                                color={isAnswered ? (isCorrect ? 'success.main' : 'error.main') : 'text.disabled'}>
+                                {ans?.selected || '— Not answered —'}
+                              </Typography>
+                            </Grid>
+                            <Grid item xs={6}>
+                              <Typography variant="caption" color="text.secondary">Correct answer</Typography>
+                              <Typography variant="body2" fontWeight={600} color="success.main">
+                                {q.correctAnswer || (q.correctOrder?.join(' → ')) || '—'}
+                              </Typography>
+                            </Grid>
+                          </Grid>
+                        )}
+
+                        {q.explanation && (
+                          <>
+                            <Divider sx={{ my: 1 }} />
+                            <Typography variant="caption" color="text.secondary">
+                              💡 <strong>Explanation:</strong> {q.explanation}
+                            </Typography>
+                          </>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </Stack>
+            )}
+          </>
+        )}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} variant="contained" sx={{ borderRadius: '10px' }}>Close</Button>
+      </DialogActions>
+    </Dialog>
   )
 }

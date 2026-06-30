@@ -209,6 +209,10 @@ export const quizzesApi = {
   getAttempts: (quizId) =>
     api.get(`/quizzes/${quizId}/attempts`).then(r => r.data),
 
+  /** [Student/Parent/Teacher/Admin] Get full detail of a single attempt — questions + answers */
+  getAttempt: (attemptId) =>
+    api.get(`/quizzes/attempts/${attemptId}`).then(r => r.data),
+
   /**
    * [Teacher/Admin] Reissue a quiz for a specific student.
    * Deletes the student's existing attempt so they can take it again.
@@ -240,6 +244,14 @@ export const notificationsApi = {
   /** Mark all unread notifications as read */
   markAllRead: () =>
     api.patch('/users/notifications/mark-all-read').then(r => r.data),
+
+  /**
+   * [Teacher/Admin] Broadcast a notification to students.
+   * Payload: { title, message, classId?, grade? }
+   * Teachers may only target classes they teach.
+   */
+  broadcast: (payload) =>
+    api.post('/users/notifications/broadcast', payload).then(r => r.data),
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -367,6 +379,29 @@ export const classesApi = {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
+   ADMIN API  — Platform stats + content moderation
+   ══════════════════════════════════════════════════════════════════════════ */
+export const adminApi = {
+  /** [Admin] Aggregated platform analytics for the admin dashboard */
+  getStats: () =>
+    api.get('/admin/stats').then(r => r.data),
+
+  /** [Admin] List moderation items. Params: { status?, type? } where
+   *  status ∈ pending|approved|rejected|all (default pending),
+   *  type   ∈ all|quiz|lesson (default all). */
+  listModeration: (params = {}) =>
+    api.get('/admin/moderation', { params }).then(r => r.data),
+
+  /** [Admin] Full detail for the View dialog */
+  getModerationItem: (kind, id) =>
+    api.get(`/admin/moderation/${kind}/${id}`).then(r => r.data),
+
+  /** [Admin] Approve or reject. Payload: { status: 'approved'|'rejected', note? } */
+  moderate: (kind, id, payload) =>
+    api.patch(`/admin/moderation/${kind}/${id}`, payload).then(r => r.data),
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
    DEFAULT EXPORT — grouped by domain
    ══════════════════════════════════════════════════════════════════════════ */
 export default {
@@ -380,4 +415,5 @@ export default {
   progress:      progressApi,
   badgeCatalog:  badgeCatalogApi,
   classes:       classesApi,
+  admin:         adminApi,
 }

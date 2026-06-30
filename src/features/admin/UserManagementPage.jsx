@@ -9,6 +9,7 @@ import BlockRoundedIcon from '@mui/icons-material/BlockRounded'
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded'
 import LockResetRoundedIcon from '@mui/icons-material/LockResetRounded'
 import api from '../../services/api'
+import { formatDate } from '../../utils/date'
 
 const roleColors = { student: '#3B82F6', teacher: '#10B981', parent: '#0F766E', admin: '#1E293B' }
 const roleIcons  = { student: '🎒', teacher: '📚', parent: '👨‍👩‍👧', admin: '⚙️' }
@@ -149,7 +150,7 @@ export default function UserManagementPage() {
       field: 'createdAt',
       headerName: 'Joined',
       width: 110,
-      valueFormatter: (value) => value ? new Date(value).toLocaleDateString() : '',
+      valueFormatter: (value) => formatDate(value),
     },
     {
       field: 'actions',
@@ -223,6 +224,7 @@ export default function UserManagementPage() {
             loading={loading}
             columns={userColumns}
             disableRowSelectionOnClick
+            rowHeight={64}
             paginationMode="server"
             rowCount={rowCount}
             paginationModel={paginationModel}

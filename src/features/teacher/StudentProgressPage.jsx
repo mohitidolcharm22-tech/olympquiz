@@ -9,6 +9,7 @@ import {
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
 import RestartAltRoundedIcon from '@mui/icons-material/RestartAltRounded'
 import { progressApi, quizzesApi } from '../../services/apiCatalog'
+import { formatDate } from '../../utils/date'
 
 export default function StudentProgressPage() {
   const { studentId } = useParams()
@@ -144,7 +145,7 @@ export default function StudentProgressPage() {
                         <Chip label={a.passed ? 'Passed' : 'Failed'} size="small"
                           color={a.passed ? 'success' : 'error'} variant="outlined" />
                       </TableCell>
-                      <TableCell>{new Date(a.completedAt).toLocaleDateString()}</TableCell>
+                      <TableCell>{formatDate(a.completedAt)}</TableCell>
                       <TableCell align="right">
                         <Tooltip title="Reissue — wipes this attempt so the student can take it again">
                           <span>
