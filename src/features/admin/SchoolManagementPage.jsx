@@ -16,7 +16,7 @@ import { formatDate } from '../../utils/date'
 
 const emptyForm = {
   name: '', code: '', address: '', city: '', state: '',
-  country: 'India', phone: '', email: '', timezone: 'Asia/Kolkata',
+  country: 'India', phone: '', email: '', timezone: 'Asia/Kolkata', logoUrl: '',
 }
 
 export default function SchoolManagementPage() {
@@ -75,6 +75,7 @@ export default function SchoolManagementPage() {
       phone:    school.phone    || '',
       email:    school.email    || '',
       timezone: school.timezone || 'Asia/Kolkata',
+      logoUrl:  school.logoUrl  || '',
     })
     setEditId(school._id)
     setFormError('')
@@ -316,6 +317,27 @@ export default function SchoolManagementPage() {
             <Grid item xs={6}><TextField label="Phone"   fullWidth value={form.phone}   onChange={handleField('phone')} /></Grid>
             <Grid item xs={12}><TextField label="Email"  fullWidth value={form.email}   onChange={handleField('email')} type="email" /></Grid>
             <Grid item xs={12}><TextField label="Timezone" fullWidth value={form.timezone} onChange={handleField('timezone')} helperText="e.g. Asia/Kolkata, Asia/Dubai" /></Grid>
+            <Grid item xs={12}>
+              <TextField
+                label="Logo URL (optional)"
+                fullWidth
+                value={form.logoUrl}
+                onChange={handleField('logoUrl')}
+                placeholder="https://yourschool.com/logo.png"
+                helperText="Paste a public image URL — shown in the admin sidebar"
+                InputProps={form.logoUrl ? {
+                  endAdornment: (
+                    <Box
+                      component="img"
+                      src={form.logoUrl}
+                      alt="preview"
+                      sx={{ width: 28, height: 28, borderRadius: '4px', objectFit: 'contain', ml: 1 }}
+                      onError={(e) => { e.target.style.display = 'none' }}
+                    />
+                  ),
+                } : undefined}
+              />
+            </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>

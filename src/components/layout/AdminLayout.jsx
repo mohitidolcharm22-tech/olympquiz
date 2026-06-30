@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation, Outlet } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import {
@@ -18,6 +18,7 @@ import MenuRoundedIcon from '@mui/icons-material/MenuRounded'
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded'
 import { logoutUser } from '../../store/slices/authSlice'
 import { toggleMobileSidebar, closeMobileSidebar } from '../../store/slices/uiSlice'
+import { schoolsApi } from '../../services/apiCatalog'
 
 const DRAWER_WIDTH = 260
 
@@ -41,6 +42,15 @@ export default function AdminLayout() {
   const { sidebarMobileOpen } = useSelector(s => s.ui)
   const { unreadCount } = useSelector(s => s.notifications)
   const [anchorEl, setAnchorEl] = useState(null)
+  const [school, setSchool] = useState(null)
+
+  useEffect(() => {
+    if (user?.schoolId) {
+      schoolsApi.getOne(user.schoolId)
+        .then(res => setSchool(res?.data?.school || null))
+        .catch(() => {}) // non-critical — sidebar still works without it
+    }
+  }, [user?.schoolId])
 
   const handleLogout = async () => {
     await dispatch(logoutUser())
@@ -51,14 +61,49 @@ export default function AdminLayout() {
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ p: 3, pb: 2 }}>
         <Typography variant="h6" fontWeight={800} sx={{ color: 'white' }}>🏆 OlympQuiz</Typography>
-        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)' }}>Admin Console</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mt: 0.25 }}>
+          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)' }}>
+            {user?.role === 'super_admin' ? 'Super Admin Console' : 'Admin Console'}
+          </Typography>
+          {school && (
+            <>
+              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.2)' }}>·</Typography>
+              {school.logoUrl ? (
+                <Box
+                  component="img"
+                  src={school.logoUrl}
+                  alt={school.name}
+                  sx={{ width: 14, height: 14, borderRadius: '2px', objectFit: 'contain', flexShrink: 0 }}
+                />
+              ) : (
+                <Box sx={{ width: 14, height: 14, borderRadius: '2px', bgcolor: '#3B82F6',
+                           display: 'flex', alignItems: 'center', justifyContent: 'center',
+                           fontSize: '0.55rem', fontWeight: 800, color: 'white', flexShrink: 0 }}>
+                  {school.name.charAt(0)}
+                </Box>
+              )}
+              <Typography
+                variant="caption"
+                fontWeight={600}
+                sx={{ color: 'rgba(255,255,255,0.55)', whiteSpace: 'nowrap',
+                      overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 110 }}
+              >
+                {school.name}
+              </Typography>
+            </>
+          )}
+        </Box>
       </Box>
       <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)' }} />
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
         <Avatar sx={{ bgcolor: '#3B82F6', fontWeight: 700 }}>{user?.avatar}</Avatar>
         <Box>
           <Typography variant="subtitle2" sx={{ color: 'white', fontWeight: 700 }}>{user?.name}</Typography>
-          <Chip label="ADMIN" size="small" sx={{ bgcolor: '#3B82F620', color: '#93C5FD', height: 18, fontSize: '0.6rem', fontWeight: 700 }} />
+          <Chip
+            label={user?.role === 'super_admin' ? 'SUPER ADMIN' : user?.role === 'school_admin' ? 'SCHOOL ADMIN' : 'ADMIN'}
+            size="small"
+            sx={{ bgcolor: '#3B82F620', color: '#93C5FD', height: 18, fontSize: '0.6rem', fontWeight: 700 }}
+          />
         </Box>
       </Box>
       <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)', mb: 1 }} />
