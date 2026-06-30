@@ -53,6 +53,7 @@ const ContentModerationPage  = lazy(() => import('../features/admin/ContentModer
 const AdminAnalyticsPage     = lazy(() => import('../features/admin/AdminAnalyticsPage'))
 const FeedbackManagementPage = lazy(() => import('../features/admin/FeedbackManagementPage'))
 const BadgeManagementPage    = lazy(() => import('../features/admin/BadgeManagementPage'))
+const SchoolManagementPage   = lazy(() => import('../features/admin/SchoolManagementPage'))
 
 const Fallback = () => (
   <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -127,7 +128,7 @@ export default function AppRoutes() {
 
         {/* ============ ADMIN ROUTES ============ */}
         <Route path="/admin" element={
-          <ProtectedRoute allowedRoles={['admin']}>
+          <ProtectedRoute allowedRoles={['admin', 'school_admin', 'super_admin']}>
             <AdminLayout />
           </ProtectedRoute>
         }>
@@ -138,6 +139,7 @@ export default function AppRoutes() {
           <Route path="analytics" element={<AdminAnalyticsPage />} />
           <Route path="feedback" element={<FeedbackManagementPage />} />
           <Route path="badges" element={<BadgeManagementPage />} />
+          <Route path="schools" element={<SchoolManagementPage />} />
         </Route>
 
         {/* 404 */}

@@ -12,6 +12,7 @@ import LibraryBooksRoundedIcon from '@mui/icons-material/LibraryBooksRounded'
 import AnalyticsRoundedIcon from '@mui/icons-material/AnalyticsRounded'
 import FeedbackRoundedIcon from '@mui/icons-material/FeedbackRounded'
 import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded'
+import CorporateFareRoundedIcon from '@mui/icons-material/CorporateFareRounded'
 import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded'
 import MenuRoundedIcon from '@mui/icons-material/MenuRounded'
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded'
@@ -27,6 +28,7 @@ const navItems = [
   { label: 'Analytics', icon: <AnalyticsRoundedIcon />, path: '/admin/analytics' },
   { label: 'Feedback',   icon: <FeedbackRoundedIcon />, path: '/admin/feedback', badge: 5 },
   { label: 'Badges',     icon: <EmojiEventsRoundedIcon />, path: '/admin/badges' },
+  { label: 'Schools',    icon: <CorporateFareRoundedIcon />, path: '/admin/schools' },
 ]
 
 export default function AdminLayout() {

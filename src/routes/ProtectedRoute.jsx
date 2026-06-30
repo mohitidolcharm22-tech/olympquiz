@@ -20,10 +20,12 @@ export default function ProtectedRoute({ children, allowedRoles }) {
 
   if (allowedRoles && !allowedRoles.includes(role)) {
     const redirects = {
-      student: '/student/dashboard',
-      teacher: '/teacher/dashboard',
-      parent: '/parent/dashboard',
-      admin: '/admin/dashboard',
+      student:      '/student/dashboard',
+      teacher:      '/teacher/dashboard',
+      parent:       '/parent/dashboard',
+      admin:        '/admin/dashboard',
+      school_admin: '/admin/dashboard',
+      super_admin:  '/admin/dashboard',
     }
     return <Navigate to={redirects[role] || '/login'} replace />
   }

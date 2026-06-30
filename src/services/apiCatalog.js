@@ -402,6 +402,43 @@ export const adminApi = {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
+   SCHOOLS API  — Super-admin manages school tenants
+   ══════════════════════════════════════════════════════════════════════════ */
+export const schoolsApi = {
+  /** [super_admin] List all schools. Params: { search?, isActive?, page?, limit? } */
+  getAll: (params = {}) =>
+    api.get('/schools', { params }).then(r => r.data),
+
+  /** [super_admin | school_admin] Get one school with user counts */
+  getOne: (id) =>
+    api.get(`/schools/${id}`).then(r => r.data),
+
+  /** [super_admin] Create a new school */
+  create: (payload) =>
+    api.post('/schools', payload).then(r => r.data),
+
+  /** [super_admin | school_admin] Update school metadata */
+  update: (id, payload) =>
+    api.patch(`/schools/${id}`, payload).then(r => r.data),
+
+  /** [super_admin] Toggle active status */
+  toggleStatus: (id) =>
+    api.patch(`/schools/${id}/toggle-status`).then(r => r.data),
+
+  /** [super_admin] Promote an existing user to school_admin. Payload: { userId } */
+  addAdmin: (schoolId, userId) =>
+    api.post(`/schools/${schoolId}/admins`, { userId }).then(r => r.data),
+
+  /** [super_admin] Create a brand-new school_admin account. Payload: { name, email, password, phone? } */
+  createAdmin: (schoolId, payload) =>
+    api.post(`/schools/${schoolId}/admins/new`, payload).then(r => r.data),
+
+  /** [super_admin] List all admins for a school */
+  listAdmins: (schoolId) =>
+    api.get(`/schools/${schoolId}/admins`).then(r => r.data),
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
    DEFAULT EXPORT — grouped by domain
    ══════════════════════════════════════════════════════════════════════════ */
 export default {
@@ -416,4 +453,5 @@ export default {
   badgeCatalog:  badgeCatalogApi,
   classes:       classesApi,
   admin:         adminApi,
+  schools:       schoolsApi,
 }

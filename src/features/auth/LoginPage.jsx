@@ -18,10 +18,12 @@ const demoRoles = [
 ]
 
 const roleRoutes = {
-  student: '/student/dashboard',
-  teacher: '/teacher/dashboard',
-  parent: '/parent/dashboard',
-  admin: '/admin/dashboard',
+  student:     '/student/dashboard',
+  teacher:     '/teacher/dashboard',
+  parent:      '/parent/dashboard',
+  admin:       '/admin/dashboard',
+  school_admin:'/admin/dashboard',
+  super_admin: '/admin/dashboard',
 }
 
 export default function LoginPage() {
@@ -37,7 +39,7 @@ export default function LoginPage() {
     if (loginUser.fulfilled.match(result)) {
       const role = result.payload.data.user.role
       dispatch(setTheme(role))
-      navigate(roleRoutes[role] || '/student/dashboard')
+      navigate(roleRoutes[role] || '/admin/dashboard')
     }
   }
 

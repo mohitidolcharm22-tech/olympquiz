@@ -9,10 +9,12 @@ export { elevationTokens } from './tokens/elevation'
 
 export const getThemeByRole = (role) => {
   const themes = {
-    student: () => import('./themes/studentTheme').then(m => m.default),
-    teacher: () => import('./themes/teacherTheme').then(m => m.default),
-    parent: () => import('./themes/parentTheme').then(m => m.default),
-    admin: () => import('./themes/adminTheme').then(m => m.default),
+    student:      () => import('./themes/studentTheme').then(m => m.default),
+    teacher:      () => import('./themes/teacherTheme').then(m => m.default),
+    parent:       () => import('./themes/parentTheme').then(m => m.default),
+    admin:        () => import('./themes/adminTheme').then(m => m.default),
+    school_admin: () => import('./themes/adminTheme').then(m => m.default),
+    super_admin:  () => import('./themes/adminTheme').then(m => m.default),
   }
-  return themes[role] || themes.student
+  return themes[role] || themes.admin
 }
