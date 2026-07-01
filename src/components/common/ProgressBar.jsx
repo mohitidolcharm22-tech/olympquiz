@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { Box, Typography, LinearProgress, Chip } from '@mui/material'
+import { Box, Typography, LinearProgress } from '@mui/material'
 
 function ProgressBar({ value, label, color = 'primary', showLabel = true, height = 8, suffix = '%' }) {
   return (

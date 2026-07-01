@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useSelector } from 'react-redux'
 import {
-  Box, Typography, Card, CardContent, Button, Chip, Grid, Avatar,
+  Box, Typography, Card, CardContent, Button, Chip, Grid,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton,
   TextField, InputAdornment, Select, MenuItem, FormControl, InputLabel,
   Dialog, DialogTitle, DialogContent, DialogActions,
-  Tooltip, Divider, LinearProgress, Alert, useTheme, useMediaQuery, CircularProgress,
+  Tooltip, Divider, LinearProgress, Alert, CircularProgress,
 } from '@mui/material'
 import AddRoundedIcon          from '@mui/icons-material/AddRounded'
 import SearchRoundedIcon       from '@mui/icons-material/SearchRounded'
@@ -15,7 +15,6 @@ import VisibilityRoundedIcon   from '@mui/icons-material/VisibilityRounded'
 import AssignmentRoundedIcon   from '@mui/icons-material/AssignmentRounded'
 import AutoAwesomeRoundedIcon  from '@mui/icons-material/AutoAwesomeRounded'
 import DeleteRoundedIcon       from '@mui/icons-material/DeleteRounded'
-import RefreshRoundedIcon      from '@mui/icons-material/RefreshRounded'
 import LockRoundedIcon          from '@mui/icons-material/LockRounded'
 import { quizzesApi, subjectsApi, classesApi } from '../../services/apiCatalog'
 import QuestionEditor, { emptyQuestion, QUESTION_TYPES } from './QuestionEditor'
@@ -126,7 +125,7 @@ function AssignDialog({ quiz, classes, onClose, onSaved }) {
       <DialogTitle fontWeight={800}>Assign Quiz</DialogTitle>
       <DialogContent>
         <Typography variant="body2" sx={{ mb: 2 }}>
-          Assign <strong>"{quiz.title}"</strong> to one or more classes. Leave empty to keep it open to all students at the matching grade.
+          Assign <strong>{'"'}{quiz.title}{'"'}</strong> to one or more classes. Leave empty to keep it open to all students at the matching grade.
         </Typography>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <FormControl fullWidth>
@@ -168,8 +167,6 @@ function AssignDialog({ quiz, classes, onClose, onSaved }) {
 const emptyQuizForm = { title: '', subjectId: '', grade: '3', difficulty: 'easy', durationMinutes: 10, xpReward: 50, quizType: 'test', questionsToServe: '', assignedClassIds: [] }
 
 export default function QuizManagementPage() {
-  const theme  = useTheme()
-  const mobile = useMediaQuery(theme.breakpoints.down('sm'))
 
   // Quizzes that any student has already started — these are locked from editing
   const attemptedQuizIds = useSelector(s => s.quiz.attemptedQuizIds)
@@ -732,7 +729,7 @@ export default function QuizManagementPage() {
         PaperProps={{ sx: { borderRadius: '16px' } }}>
         <DialogTitle fontWeight={800}>Delete Quiz?</DialogTitle>
         <DialogContent>
-          <Typography>Are you sure you want to delete <strong>"{deleteQuiz?.title}"</strong>? This cannot be undone.</Typography>
+          <Typography>Are you sure you want to delete <strong>{'"'}{deleteQuiz?.title}{'"'}</strong>? This cannot be undone.</Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
           <Button onClick={() => setDeleteQuiz(null)} variant="outlined" sx={{ borderRadius: '10px' }}>Cancel</Button>

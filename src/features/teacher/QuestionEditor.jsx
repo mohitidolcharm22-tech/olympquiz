@@ -8,7 +8,7 @@
  */
 import {
   Box, Card, CardContent, Typography, TextField, Select, MenuItem,
-  FormControl, InputLabel, IconButton, Button, Chip, Radio,
+  FormControl, IconButton, Button, Chip, Radio,
   RadioGroup, FormControlLabel, Divider, Tooltip, Avatar,
 } from '@mui/material'
 import DeleteRoundedIcon  from '@mui/icons-material/DeleteRounded'
@@ -17,6 +17,7 @@ import DragHandleIcon     from '@mui/icons-material/DragHandle'
 import SwapVertIcon       from '@mui/icons-material/SwapVert'
 
 /* ── Question type meta ──────────────────────────────────────────────────── */
+// eslint-disable-next-line react-refresh/only-export-components
 export const QUESTION_TYPES = [
   { value: 'mcq',        label: '🔘 MCQ',              desc: 'Multiple choice – one correct answer' },
   { value: 'imagemcq',   label: '🖼️ Image MCQ',        desc: 'MCQ with an image prompt' },
@@ -28,6 +29,7 @@ export const QUESTION_TYPES = [
   { value: 'flashcard',  label: '💡 Flashcard',         desc: 'Front / Back study card' },
 ]
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const emptyQuestion = (type = 'mcq') => {
   const base = { type, text: '', explanation: '', points: 10 }
   switch (type) {

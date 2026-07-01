@@ -3,8 +3,8 @@ import { useNavigate, useLocation, Outlet } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import {
   Box, AppBar, Toolbar, Typography, Avatar, IconButton,
-  BottomNavigation, BottomNavigationAction, List, ListItem,
-  ListItemIcon, ListItemText, useMediaQuery, useTheme, Divider, Menu, MenuItem,
+  BottomNavigation, BottomNavigationAction,
+  ListItemIcon, useMediaQuery, useTheme, Divider, Menu, MenuItem,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button,
   FormControl, InputLabel, Select, Alert, Snackbar,
 } from '@mui/material'
@@ -12,13 +12,11 @@ import HomeRoundedIcon from '@mui/icons-material/HomeRounded'
 import MenuBookRoundedIcon from '@mui/icons-material/MenuBookRounded'
 import QuizRoundedIcon from '@mui/icons-material/QuizRounded'
 import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded'
-import AccountCircleRoundedIcon from '@mui/icons-material/AccountCircleRounded'
 import LeaderboardRoundedIcon from '@mui/icons-material/LeaderboardRounded'
 import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded'
 import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded'
 import FeedbackRoundedIcon from '@mui/icons-material/FeedbackRounded'
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded'
-import MenuRoundedIcon from '@mui/icons-material/MenuRounded'
 import { logoutUser } from '../../store/slices/authSlice'
 import { feedbackApi } from '../../services/apiCatalog'
 

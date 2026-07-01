@@ -1,5 +1,4 @@
 import { createTheme } from '@mui/material/styles'
-import { colorTokens } from '../tokens/colors'
 import { typographyTokens } from '../tokens/typography'
 
 // ============================================================

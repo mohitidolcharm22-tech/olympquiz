@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import {
   Box, AppBar, Toolbar, Typography, Avatar, IconButton, Badge, Drawer,
   List, ListItem, ListItemButton, ListItemIcon, ListItemText, Divider,
-  Menu, MenuItem, Tooltip, useMediaQuery, useTheme,
+  Menu, MenuItem, useMediaQuery, useTheme,
 } from '@mui/material'
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded'
 import LibraryBooksRoundedIcon from '@mui/icons-material/LibraryBooksRounded'

@@ -1,5 +1,4 @@
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useSelector } from 'react-redux'
 import { Box, Grid, Typography, Chip, InputAdornment, TextField, CircularProgress, Alert, Button } from '@mui/material'
 import { useState, useEffect, useMemo } from 'react'
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded'
@@ -24,7 +23,6 @@ const difficultyFilters = [
 export default function QuizListPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate  = useNavigate()
-  const attemptedQuizIds = useSelector(s => s.quiz.attemptedQuizIds)
 
   // Topic filter comes from the URL (?topicId=&topicName=) so the link is
   // shareable and survives a reload. TopicsPage navigates here with these params.

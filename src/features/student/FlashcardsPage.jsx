@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Box, Typography, Card, CardContent, Button, Avatar } from '@mui/material'
+import { Box, Typography, Button } from '@mui/material'
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
 import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded'
 import FlipRoundedIcon from '@mui/icons-material/FlipRounded'

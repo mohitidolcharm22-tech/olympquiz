@@ -28,25 +28,23 @@ export const registerUser = createAsyncThunk(
 
 export const loginUser = createAsyncThunk(
   'auth/login',
-  async ({ email, password }, { rejectWithValue }) => {
+  async ({ email, password }) => {
     try {
       const { data } = await api.post('/auth/login', { email, password })
       persistToken(data.accessToken)
       return data
     } catch (err) {
       const msg = err.response?.data?.message || 'Incorrect email or password.'
-      return rejectWithValue(msg)
+      throw new Error(msg)
     }
   },
 )
 
 export const logoutUser = createAsyncThunk(
   'auth/logout',
-  async (_, { rejectWithValue }) => {
+  async () => {
     try {
       await api.post('/auth/logout')
-    } catch (_err) {
-      // Even if the server call fails, clear local state
     } finally {
       persistToken(null)
     }
@@ -61,9 +59,9 @@ export const restoreSession = createAsyncThunk(
     try {
       const { data } = await api.get('/auth/me')
       return { user: data.data.user, token }
-    } catch (_err) {
+    } catch (err) {
       persistToken(null)
-      return rejectWithValue('invalid token')
+      return rejectWithValue(`invalid token${err.response?.data?.message ? `: ${err.response.data.message}` : ''}`)
     }
   },
 )

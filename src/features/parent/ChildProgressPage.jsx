@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
-import { useSelector } from 'react-redux'
 import {
-  Box, Typography, Card, CardContent, Avatar, Chip, LinearProgress,
+  Box, Typography, Card, CardContent, Avatar, Chip,
   Grid, Select, MenuItem, FormControl, InputLabel, CircularProgress, Alert,
   Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, InputAdornment,
   Divider, Stack,
@@ -16,7 +15,6 @@ import { badgeDefinitions as FALLBACK_BADGES } from '../../data/index'
 import { formatDate, formatDateTime } from '../../utils/date'
 
 export default function ChildProgressPage() {
-  const { user } = useSelector(s => s.auth)
   const [children, setChildren]     = useState([])
   const [badgeDefs, setBadgeDefs]   = useState(FALLBACK_BADGES)
   const [loading, setLoading]       = useState(true)
@@ -92,7 +90,7 @@ export default function ChildProgressPage() {
     <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 900, mx: 'auto' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Box>
-          <Typography variant="h5" fontWeight={800}>📊 Child's Progress</Typography>
+          <Typography variant="h5" fontWeight={800}>📊 Child{'"'}s Progress</Typography>
           <Typography variant="body2" color="text.secondary">Detailed learning analytics for your child</Typography>
         </Box>
         <Button variant="outlined" size="small" onClick={() => setShowLink(true)} sx={{ borderRadius: '10px' }}>
@@ -107,7 +105,7 @@ export default function ChildProgressPage() {
           <Typography variant="h4" sx={{ mb: 1 }}>👨‍👩‍👧</Typography>
           <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>No children linked yet</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Link your child's account using their registered email address.
+            Link your child{'"'}s account using their registered email address.
           </Typography>
           <Button variant="contained" onClick={() => setShowLink(true)} sx={{ borderRadius: '10px' }}>
             Link a Child
@@ -262,7 +260,7 @@ export default function ChildProgressPage() {
                               <Typography variant="subtitle2" fontWeight={700}>{def?.name || tb.badgeId}</Typography>
                               {tb.note && (
                                 <Typography variant="caption" sx={{ display: 'block', fontStyle: 'italic', color: def?.color || '#6C63FF' }}>
-                                  "{tb.note}"
+                                  {'"'}{tb.note}{'"'}
                                 </Typography>
                               )}
                               <Typography variant="caption" color="text.disabled">
@@ -287,7 +285,7 @@ export default function ChildProgressPage() {
         <DialogTitle fontWeight={800}>🔗 Link a Child</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Enter your child's username to link their account.
+            Enter your child{'"'}s username to link their account.
           </Typography>
           {linkMsg && <Alert severity={linkMsg.includes('successfully') ? 'success' : 'error'} sx={{ mb: 2 }}>{linkMsg}</Alert>}
           <TextField fullWidth label="Child's Username" value={linkUsername}
@@ -456,7 +454,7 @@ function QuizReviewDialog({ open, loading, error, attempt, onClose }) {
                         {!q.options?.length && (
                           <Grid container spacing={1} sx={{ mb: 1 }}>
                             <Grid item xs={6}>
-                              <Typography variant="caption" color="text.secondary">Child's answer</Typography>
+                              <Typography variant="caption" color="text.secondary">Child answer</Typography>
                               <Typography variant="body2" fontWeight={600}
                                 color={isAnswered ? (isCorrect ? 'success.main' : 'error.main') : 'text.disabled'}>
                                 {ans?.selected || '— Not answered —'}

@@ -35,6 +35,7 @@ export default function StudentProgressPage() {
       setLoading(false)
     }
   }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load() }, [studentId])
 
   const handleReissue = async () => {
@@ -168,7 +169,7 @@ export default function StudentProgressPage() {
         <DialogTitle fontWeight={800}>Reissue quiz?</DialogTitle>
         <DialogContent>
           <Typography>
-            This will permanently delete <strong>{user.name}</strong>'s attempt for{' '}
+            This will permanently delete <strong>{user.name}</strong>{'"'}s attempt for{' '}
             <strong>{confirmReissue?.quizId?.title || 'this quiz'}</strong> and the XP earned from it.
             The student will then be able to take the quiz again.
           </Typography>

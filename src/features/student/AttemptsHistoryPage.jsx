@@ -41,7 +41,7 @@ export default function AttemptsHistoryPage() {
     <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 900, mx: 'auto' }}>
       <Typography variant="h5" fontWeight={800} sx={{ mb: 0.5 }}>📜 Quiz Attempts</Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Every quiz you've taken, with your score and date.
+        Every quiz you{'"'}ve taken, with your score and date.
       </Typography>
 
       {error && (

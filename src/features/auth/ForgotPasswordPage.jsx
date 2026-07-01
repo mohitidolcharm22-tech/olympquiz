@@ -25,7 +25,7 @@ export default function ForgotPasswordPage() {
           <CardContent sx={{ p: 3 }}>
             <Typography variant="h5" sx={{ mb: 0.5 }}>🔐 Forgot Password?</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
-              Enter your email and we'll send you a reset OTP.
+              Enter your email and we{'"'}ll send you a reset OTP.
             </Typography>
             {sent && <Alert severity="success" sx={{ mb: 2, borderRadius: '10px' }}>OTP sent to your email! Redirecting...</Alert>}
             <TextField fullWidth label="Email Address" type="email" value={email}

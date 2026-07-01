@@ -1,6 +1,6 @@
 import { useSelector } from 'react-redux'
 import { useState, useEffect } from 'react'
-import { Box, Typography, Grid, Card, CardContent, Avatar, Chip, LinearProgress, CircularProgress } from '@mui/material'
+import { Box, Typography, Grid, Card, CardContent, Chip, LinearProgress } from '@mui/material'
 import BadgeCard from '../../components/common/BadgeCard'
 import { badgeDefinitions as FALLBACK_BADGES } from '../../data/index'
 import { progressApi, badgeCatalogApi } from '../../services/apiCatalog'
@@ -107,7 +107,7 @@ export default function AchievementsPage() {
                       </Typography>
                       {tb.note && (
                         <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: def?.color || '#6C63FF', fontStyle: 'italic' }}>
-                          "{tb.note}"
+                        {'"'}{tb.note}{'"'}
                         </Typography>
                       )}
                       <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.5 }}>

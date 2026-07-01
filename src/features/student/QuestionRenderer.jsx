@@ -13,7 +13,6 @@ import {
 } from '@mui/material'
 import CheckCircleRoundedIcon  from '@mui/icons-material/CheckCircleRounded'
 import CancelRoundedIcon       from '@mui/icons-material/CancelRounded'
-import SwapVertIcon            from '@mui/icons-material/SwapVert'
 
 /* ── MCQ / Odd-one-out / Image MCQ ───────────────────────────────────────── */
 function McqRenderer({ question, answer, onAnswer, showResult }) {

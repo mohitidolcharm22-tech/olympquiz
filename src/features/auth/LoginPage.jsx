@@ -117,7 +117,7 @@ export default function LoginPage() {
             </Button>
 
             <Typography variant="body2" align="center" color="text.secondary" sx={{ mb: 2 }}>
-              Don't have an account?{' '}
+              Don{'"'}t have an account?{' '}
               <RouterLink to="/register" style={{ color: '#6C63FF', fontWeight: 700, textDecoration: 'none' }}>
                 Register here
               </RouterLink>

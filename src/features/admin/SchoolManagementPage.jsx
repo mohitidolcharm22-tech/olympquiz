@@ -229,7 +229,7 @@ export default function SchoolManagementPage() {
               )}
               {!loading && schools.length === 0 && (
                 <TableRow><TableCell colSpan={7} align="center" sx={{ py: 6, color: 'text.secondary' }}>
-                  No schools yet. Click "Add School" to get started.
+                  No schools yet. Click {'"'}Add School{'"'} to get started.
                 </TableCell></TableRow>
               )}
               {!loading && schools.map((sc) => (

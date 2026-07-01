@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import {
-  Box, Typography, Card, Grid, Chip, TextField, InputAdornment,
+  Box, Typography, Card, Chip, TextField, InputAdornment,
   Button, Dialog, DialogTitle, DialogContent, DialogActions,
   Table, TableHead, TableRow, TableCell, TableBody, TableContainer,
   CircularProgress, Alert, IconButton, Snackbar, Tooltip, Switch,
@@ -133,7 +133,7 @@ export default function BadgeManagementPage() {
                 {filtered.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5} align="center" sx={{ py: 6, color: 'text.secondary' }}>
-                      No badges yet. Click "New Badge" to create one.
+                      No badges yet. Click {'“'}New Badge{'"'} to create one.
                     </TableCell>
                   </TableRow>
                 )}
@@ -270,7 +270,7 @@ export default function BadgeManagementPage() {
         <DialogTitle sx={{ fontWeight: 800 }}>🗑️ Delete Badge?</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary">
-            Are you sure you want to delete <strong>"{confirmDelete?.name}"</strong>?
+            Are you sure you want to delete <strong>{'“'}{confirmDelete?.name}{'”'}</strong>?
             This cannot be undone. Students who have already earned it will keep their record,
             but teachers will no longer see it as an option.
           </Typography>

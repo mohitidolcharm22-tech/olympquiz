@@ -65,7 +65,7 @@ export default function OTPVerificationPage() {
             </Button>
 
             <Typography variant="body2" color="text.secondary">
-              Didn't receive?{' '}
+              Didn{'"'}t receive?{' '}
               <Button variant="text" size="small" sx={{ textTransform: 'none', fontWeight: 700, p: 0 }}>Resend OTP</Button>
             </Typography>
 

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
-  Box, Card, CardContent, Typography, Button, Grid, Avatar, Chip, Divider, List, ListItem, LinearProgress, CircularProgress, Alert,
+  Box, Card, CardContent, Typography, Button, Chip, Divider, CircularProgress, Alert,
 } from '@mui/material'
 import HomeRoundedIcon from '@mui/icons-material/HomeRounded'
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded'
@@ -61,6 +61,17 @@ export default function QuizResultPage() {
 
   const result = quizResult ?? apiResult
 
+  // useMemo must be called unconditionally before any early returns that depend on result.
+  // We derive questionById here; it safely returns an empty Map when result is null.
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const questionById = useMemo(() => {
+    const map = new Map()
+    for (const q of result?.quiz?.questions ?? []) {
+      map.set(String(q._id ?? q.id), q)
+    }
+    return map
+  }, [result?.quiz?.questions])
+
   if (!result && error) return (
     <Box sx={{ p: 3, textAlign: 'center' }}>
       <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
@@ -86,16 +97,6 @@ export default function QuizResultPage() {
   const passingScore = result.quiz?.passingScore ?? 60
   const isPassed     = result.passed     ?? (score >= passingScore)
 
-  // Build a lookup map once — question-review row count × quiz size was O(M×N).
-  const questionById = useMemo(() => {
-    const map = new Map()
-    for (const q of result.quiz?.questions ?? []) {
-      map.set(String(q._id ?? q.id), q)
-    }
-    return map
-  }, [result.quiz?.questions])
-
-  const getScoreColor = (s) => s >= 90 ? '#10B981' : s >= 60 ? '#F59E0B' : '#EF4444'
   const getGrade = (s) => s >= 90 ? 'A+' : s >= 80 ? 'A' : s >= 70 ? 'B' : s >= 60 ? 'C' : 'F'
 
   return (

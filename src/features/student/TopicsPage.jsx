@@ -98,7 +98,7 @@ export default function TopicsPage() {
           sx={{ mb: 2, borderRadius: '12px' }}
           action={<Button color="inherit" size="small" onClick={load}>Retry</Button>}
         >
-          Couldn't load your progress data — completion badges below may be out of date.
+          Couldn{'"'}t load your progress data — completion badges below may be out of date.
         </Alert>
       )}
 

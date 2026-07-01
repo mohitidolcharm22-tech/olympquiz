@@ -3,7 +3,7 @@ import { useParams, useNavigate, useBlocker } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import {
   Box, Typography, Card, CardContent, Button, LinearProgress,
-  Radio, RadioGroup, FormControl, FormControlLabel, Chip, Avatar,
+  Chip, Avatar,
   Dialog, DialogContent, DialogTitle, DialogActions, Alert,
   Table, TableBody, TableRow, TableCell, CircularProgress,
 } from '@mui/material'
@@ -152,7 +152,7 @@ export default function QuizPage() {
     <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 500, mx: 'auto', textAlign: 'center', pt: 8 }}>
       <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>No Questions Yet</Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        This quiz doesn't have any questions added yet. Please check back later.
+        This quiz doesn{'"'}t have any questions added yet. Please check back later.
       </Typography>
       <Button variant="outlined" onClick={() => { dispatch(clearActiveQuiz()); navigate('/student/quizzes') }}>Back to Quizzes</Button>
     </Box>

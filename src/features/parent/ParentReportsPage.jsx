@@ -60,7 +60,7 @@ export default function ParentReportsPage() {
         <Card sx={{ borderRadius: '16px', textAlign: 'center', py: 6 }}>
           <Typography variant="h4" sx={{ mb: 1 }}>📋</Typography>
           <Typography fontWeight={700}>No children linked yet.</Typography>
-          <Typography variant="body2" color="text.secondary">Go to Child Progress to link your child's account.</Typography>
+          <Typography variant="body2" color="text.secondary">Go to Child Progress to link your child{'"'}s account.</Typography>
         </Card>
       ) : (
         <>
@@ -84,7 +84,7 @@ export default function ParentReportsPage() {
               <Card sx={{ borderRadius: '16px', mb: 3 }}>
                 <CardContent sx={{ p: 3 }}>
                   <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
-                    📈 {child?.name}'s Score Trend
+                    📈 {child?.name}{'"'}s Score Trend
                   </Typography>
                   {monthlyData.length > 0 ? (
                     <ResponsiveContainer width="100%" height={250}>

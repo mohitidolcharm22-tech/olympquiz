@@ -90,7 +90,7 @@ export default function TeacherDashboard() {
           Good morning, {user?.name?.split(' ').pop()}! 👋
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Here's your teaching summary for today
+          Here{'"'}s your teaching summary for today
         </Typography>
       </Box>
 

@@ -376,7 +376,7 @@ export default function ContentManagementPage() {
         <DialogTitle>Delete lesson?</DialogTitle>
         <DialogContent>
           <Typography variant="body2">
-            "<strong>{confirmDel?.item?.title}</strong>" will be hidden from students. This is a soft delete and can be restored from the database.
+            {'"'}<strong>{confirmDel?.item?.title}</strong>{'"'} will be hidden from students. This is a soft delete and can be restored from the database.
           </Typography>
         </DialogContent>
         <DialogActions>

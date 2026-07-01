@@ -64,7 +64,7 @@ export default function ParentDashboard() {
     <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1000, mx: 'auto' }}>
       <Box sx={{ mb: 3 }}>
         <Typography variant="h5" fontWeight={800}>Welcome, {user?.name?.split(' ').pop()}! 👋</Typography>
-        <Typography variant="body2" color="text.secondary">Monitor your children's learning progress</Typography>
+        <Typography variant="body2" color="text.secondary">Monitor your children{'"'}s learning progress</Typography>
       </Box>
 
       {/* Children Cards */}
@@ -79,7 +79,7 @@ export default function ParentDashboard() {
           <Typography variant="h4" sx={{ mb: 1 }}>👨‍👩‍👧</Typography>
           <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>No children linked yet</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Link your child's account to start monitoring their progress.
+            Link your child{'"'}s account to start monitoring their progress.
           </Typography>
           <Button variant="contained" onClick={() => navigate('/parent/child-progress')} sx={{ borderRadius: '10px' }}>
             Link a Child
@@ -150,7 +150,7 @@ export default function ParentDashboard() {
       <Card sx={{ borderRadius: '16px', mb: 3 }}>
         <CardContent sx={{ p: 3 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6" fontWeight={700}>📅 This Week's Activity</Typography>
+            <Typography variant="h6" fontWeight={700}>📅 This Week{'"'}s Activity</Typography>
             <Button size="small" endIcon={<ArrowForwardRoundedIcon />} onClick={() => navigate('/parent/reports')}>Full Report</Button>
           </Box>
           <ResponsiveContainer width="100%" height={200}>
@@ -172,7 +172,7 @@ export default function ParentDashboard() {
             <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>🌟 Recent Achievements</Typography>
             {children.every(c => !c.badges?.length) ? (
               <Typography variant="body2" color="text.secondary">
-                No achievements yet — keep encouraging your child to complete quizzes!
+                          No achievements yet — keep encouraging your child to complete quizzes!
               </Typography>
             ) : (
               children.flatMap(c => (c.badges ?? []).map(badge => ({ child: c.name, badge }))).slice(0, 5)
@@ -182,7 +182,7 @@ export default function ParentDashboard() {
                       <Typography sx={{ fontSize: '1.5rem' }}>🏅</Typography>
                       <Box sx={{ flex: 1 }}>
                         <Typography variant="body2">
-                          <strong>{a.child}</strong> earned the <strong>"{a.badge}"</strong> badge!
+                          <strong>{a.child}</strong> earned the <strong>{'"'}{a.badge}{'"'}</strong> badge!
                         </Typography>
                       </Box>
                       <Chip label="Badge" size="small" color="success" sx={{ fontWeight: 700, fontSize: '0.65rem' }} />

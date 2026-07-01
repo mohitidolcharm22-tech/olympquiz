@@ -1,8 +1,8 @@
-import { useSelector, useDispatch } from 'react-redux'
+import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import {
-  Box, Grid, Card, CardContent, Typography, Button, Avatar, LinearProgress,
-  Chip, List, ListItem, ListItemAvatar, ListItemText, IconButton, Divider, CircularProgress, Alert,
+  Box, Grid, Card, CardContent, Typography, Button,
+  Chip, CircularProgress, Alert,
 } from '@mui/material'
 import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded'
 import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded'
@@ -10,13 +10,11 @@ import StatCard from '../../components/common/StatCard'
 import SubjectCard from '../../components/common/SubjectCard'
 import QuizCard from '../../components/common/QuizCard'
 import BadgeCard from '../../components/common/BadgeCard'
-import { startQuiz } from '../../store/slices/quizSlice'
 import { subjectsApi, quizzesApi } from '../../services/apiCatalog'
 import { useState, useEffect } from 'react'
 
 export default function StudentDashboard() {
   const { user } = useSelector(s => s.auth)
-  const dispatch = useDispatch()
   const navigate = useNavigate()
   const [subjects, setSubjects]       = useState([])
   const [recentQuizzes, setRecentQuizzes] = useState([])
@@ -113,7 +111,7 @@ export default function StudentDashboard() {
 
       {attemptsFailed && (
         <Alert severity="warning" sx={{ mb: 2, borderRadius: '12px' }}>
-          Couldn't load your recent quiz attempts — subject progress percentages may be out of date.
+          Couldn{'"'}t load your recent quiz attempts — subject progress percentages may be out of date.
         </Alert>
       )}
 

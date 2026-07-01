@@ -1,7 +1,7 @@
 import { useSelector, useDispatch } from 'react-redux'
 import {
-  Box, Typography, Card, CardContent, List, ListItem, Avatar,
-  ListItemText, IconButton, Button, Chip, Divider,
+  Box, Typography, Card, List, ListItem, Avatar,
+  Button, Chip, Divider,
 } from '@mui/material'
 import DoneAllRoundedIcon from '@mui/icons-material/DoneAllRounded'
 import { markAsRead, markAllAsRead } from '../../store/slices/notificationSlice'

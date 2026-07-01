@@ -1,4 +1,4 @@
-import { Box, Typography, Grid, Card, CardContent, Avatar, Chip, LinearProgress, Button, Dialog, DialogTitle, DialogContent, DialogActions, Tooltip, IconButton, CircularProgress, Alert, TextField, InputAdornment, Select, MenuItem, FormControl, InputLabel, Snackbar } from '@mui/material'
+import { Box, Typography, Grid, Card, CardContent, Avatar, Chip, LinearProgress, Button, Dialog, DialogTitle, DialogContent, DialogActions, Tooltip, IconButton, CircularProgress, Alert, TextField, InputAdornment } from '@mui/material'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
@@ -6,7 +6,6 @@ import StatCard from '../../components/common/StatCard'
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded'
 import OpenInNewRoundedIcon from '@mui/icons-material/OpenInNewRounded'
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded'
-import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded'
 import { progressApi } from '../../services/apiCatalog'
 import { formatDate } from '../../utils/date'
 
@@ -19,9 +18,6 @@ export default function TeacherReportsPage() {
   const [viewStudent, setViewStudent] = useState(null)
   const [studentDetail, setStudentDetail] = useState(null)
   const [detailLoading, setDetailLoading] = useState(false)
-  const [badgeToAward, setBadgeToAward] = useState('')
-  const [awardingBadge, setAwardingBadge] = useState(false)
-  const [snackbar, setSnackbar] = useState('')
 
   useEffect(() => {
     progressApi.getStudents()
@@ -33,24 +29,11 @@ export default function TeacherReportsPage() {
   const openDetail = (student) => {
     setViewStudent(student)
     setStudentDetail(null)
-    setBadgeToAward('')
     setDetailLoading(true)
     progressApi.getStudentProgress(student._id)
       .then(data => setStudentDetail(data.data))
       .catch(() => setStudentDetail(null))
       .finally(() => setDetailLoading(false))
-  }
-
-  const handleAwardBadge = () => {
-    if (!badgeToAward || !viewStudent) return
-    setAwardingBadge(true)
-    progressApi.awardBadge(viewStudent._id, badgeToAward)
-      .then(() => {
-        setSnackbar(`🏅 Badge "${badgeToAward}" awarded to ${viewStudent.name}!`)
-        setBadgeToAward('')
-      })
-      .catch(() => setSnackbar('Failed to award badge.'))
-      .finally(() => setAwardingBadge(false))
   }
 
   const filtered = students.filter(s =>

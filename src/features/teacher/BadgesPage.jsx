@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import {
-  Box, Typography, Card, CardContent, Grid, Avatar, Chip, TextField,
+  Box, Typography, Card, Grid, Avatar, Chip, TextField,
   InputAdornment, Button, Dialog, DialogTitle, DialogContent, DialogActions,
   Table, TableHead, TableRow, TableCell, TableBody, TableContainer,
-  CircularProgress, Alert, Tooltip, IconButton, Snackbar,
+  CircularProgress, Alert, Snackbar,
 } from '@mui/material'
 import SearchRoundedIcon        from '@mui/icons-material/SearchRounded'
 import EmojiEventsRoundedIcon   from '@mui/icons-material/EmojiEventsRounded'
@@ -85,7 +85,7 @@ export default function BadgesPage() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
         <Box>
           <Typography variant="h5" fontWeight={800}>🏅 Award Badges</Typography>
-          <Typography variant="body2" color="text.secondary">Recognise and reward your students' achievements</Typography>
+          <Typography variant="body2" color="text.secondary">Recognise and reward your students{'"'} achievements</Typography>
         </Box>
       </Box>
 
@@ -176,7 +176,7 @@ export default function BadgesPage() {
         </DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Select a badge to award. It will appear on the student's dashboard and be visible to parents.
+            Select a badge to award. It will appear on the student{'\"'}s dashboard and be visible to parents.
           </Typography>
           <Grid container spacing={1.5} sx={{ mb: 2 }}>
             {badges.map(badge => {
