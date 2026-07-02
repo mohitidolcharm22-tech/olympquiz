@@ -28,14 +28,14 @@ export const registerUser = createAsyncThunk(
 
 export const loginUser = createAsyncThunk(
   'auth/login',
-  async ({ email, password }) => {
+  async ({ email, password }, { rejectWithValue }) => {
     try {
       const { data } = await api.post('/auth/login', { email, password })
       persistToken(data.accessToken)
       return data
     } catch (err) {
       const msg = err.response?.data?.message || 'Incorrect email or password.'
-      throw new Error(msg)
+      return rejectWithValue(msg)
     }
   },
 )

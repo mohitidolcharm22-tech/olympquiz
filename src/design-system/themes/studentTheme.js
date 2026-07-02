@@ -77,6 +77,39 @@ const studentTheme = createTheme({
         root: { borderRadius: '100px', fontWeight: 600 },
       },
     },
+    MuiAlert: {
+      styleOverrides: {
+        root: {
+          borderRadius: '12px',
+          border: '1px solid',
+          fontWeight: 500,
+        },
+        standardSuccess: {
+          backgroundColor: '#D1FAE5',
+          borderColor: '#6EE7B7',
+          color: '#065F46',
+          '& .MuiAlert-icon': { color: '#10B981' },
+        },
+        standardError: {
+          backgroundColor: '#FEE2E2',
+          borderColor: '#FCA5A5',
+          color: '#991B1B',
+          '& .MuiAlert-icon': { color: '#EF4444' },
+        },
+        standardWarning: {
+          backgroundColor: '#FEF3C7',
+          borderColor: '#FCD34D',
+          color: '#92400E',
+          '& .MuiAlert-icon': { color: '#F59E0B' },
+        },
+        standardInfo: {
+          backgroundColor: '#DBEAFE',
+          borderColor: '#93C5FD',
+          color: '#1E3A8A',
+          '& .MuiAlert-icon': { color: '#3B82F6' },
+        },
+      },
+    },
     MuiTextField: {
       styleOverrides: {
         root: { '& .MuiOutlinedInput-root': { borderRadius: '12px' } },
