@@ -21,6 +21,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Only educational quiz generation prompts are allowed.' })
   }
   if (prompt.length > 300) {
+    console.warn(`Prompt too long (${prompt.length} chars): ${prompt}`)
     return res.status(400).json({ error: 'Prompt is too long. Keep it under 600 characters.' })
   }
 
