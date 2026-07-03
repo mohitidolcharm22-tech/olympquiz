@@ -20,4 +20,19 @@ export default defineConfig({
     port: 3000,
     open: true,
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Core React runtime — changes rarely, long-lived cache
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          // MUI — large but stable; isolate so page chunks stay small
+          'vendor-mui': ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled'],
+          // State management
+          'vendor-store': ['@reduxjs/toolkit', 'react-redux'],
+        },
+      },
+    },
+  },
 })
+

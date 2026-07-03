@@ -7,26 +7,20 @@ const baseURL = /^https?:\/\//i.test(rawBaseUrl) ? rawBaseUrl : `https://${rawBa
 
 const api = axios.create({
   baseURL,
-  withCredentials: true,   // send HttpOnly refresh-token cookie
+  // withCredentials: true is REQUIRED for HttpOnly cookies to be sent on
+  // cross-origin requests (frontend on :3000, backend on :5000).
+  // The browser automatically attaches both the accessToken and refreshToken
+  // cookies — no JS code needs to read or attach them manually.
+  withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 })
 
-// Attach access token from Redux store on every request
-api.interceptors.request.use((config) => {
-  // Token is read directly from localStorage so the interceptor stays
-  // framework-agnostic (no circular dependency with the Redux store).
-  const token = localStorage.getItem('accessToken')
-  if (token) config.headers.Authorization = `Bearer ${token}`
-  return config
-})
-
-// If the server returns 401, clear local auth state
+// No Authorization header needed — the HttpOnly cookie is sent automatically.
+// If the server returns 401, redirect to login.
 api.interceptors.response.use(
   (res) => res,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('accessToken')
-      // Redirect to login only when not already there
       if (!window.location.pathname.startsWith('/login')) {
         window.location.href = '/login'
       }

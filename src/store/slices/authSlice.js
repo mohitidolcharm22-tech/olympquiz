@@ -2,11 +2,22 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import api from '../../services/api'
 import { users } from '../../data/users'
 
-/* ─── Helper ─────────────────────────────────────────────────────────────── */
-const persistToken = (token) => {
-  if (token) localStorage.setItem('accessToken', token)
-  else localStorage.removeItem('accessToken')
-}
+/**
+ * WHY NO TOKEN IN LOCALSTORAGE ANYMORE?
+ * ─────────────────────────────────────────────────────────────────────────────
+ * The access token is now stored in an HttpOnly cookie set by the server.
+ * HttpOnly = JavaScript cannot read it at all, so XSS attacks can't steal it.
+ * The browser sends it automatically with every request (via withCredentials).
+ *
+ * We store a simple "session exists" flag so we know to show a loading
+ * spinner on refresh while restoreSession calls /auth/me to confirm.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+const SESSION_FLAG = 'session'   // just 'true' or nothing in sessionStorage
+
+const markSession  = ()  => sessionStorage.setItem(SESSION_FLAG, '1')
+const clearSession = ()  => sessionStorage.removeItem(SESSION_FLAG)
+const hasSession   = ()  => !!sessionStorage.getItem(SESSION_FLAG)
 
 /* ─── Async Thunks ───────────────────────────────────────────────────────── */
 
@@ -15,7 +26,9 @@ export const registerUser = createAsyncThunk(
   async (formData, { rejectWithValue }) => {
     try {
       const { data } = await api.post('/auth/register', formData)
-      persistToken(data.accessToken)
+      // Server sets accessToken + refreshToken as HttpOnly cookies.
+      // Response body contains user + permissions array.
+      markSession()
       return data
     } catch (err) {
       const msg = err.response?.data?.errors?.[0]?.message
@@ -31,7 +44,8 @@ export const loginUser = createAsyncThunk(
   async ({ email, password }, { rejectWithValue }) => {
     try {
       const { data } = await api.post('/auth/login', { email, password })
-      persistToken(data.accessToken)
+      // Cookies are set by the server. We only keep a session flag.
+      markSession()
       return data
     } catch (err) {
       const msg = err.response?.data?.message || 'Incorrect email or password.'
@@ -44,9 +58,9 @@ export const logoutUser = createAsyncThunk(
   'auth/logout',
   async () => {
     try {
-      await api.post('/auth/logout')
+      await api.post('/auth/logout')   // server clears both cookies
     } finally {
-      persistToken(null)
+      clearSession()
     }
   },
 )
@@ -54,14 +68,16 @@ export const logoutUser = createAsyncThunk(
 export const restoreSession = createAsyncThunk(
   'auth/restoreSession',
   async (_, { rejectWithValue }) => {
-    const token = localStorage.getItem('accessToken')
-    if (!token) return rejectWithValue('no token')
+    // No token to read from localStorage — the HttpOnly cookie is sent
+    // automatically by the browser. Just call /auth/me and see if it works.
+    if (!hasSession()) return rejectWithValue('no session')
     try {
       const { data } = await api.get('/auth/me')
-      return { user: data.data.user, token }
+      // /auth/me returns { user, permissions }
+      return { user: data.data.user, permissions: data.permissions ?? [] }
     } catch (err) {
-      persistToken(null)
-      return rejectWithValue(`invalid token${err.response?.data?.message ? `: ${err.response.data.message}` : ''}`)
+      clearSession()
+      return rejectWithValue(`session invalid: ${err.response?.data?.message ?? err.message}`)
     }
   },
 )
@@ -69,10 +85,12 @@ export const restoreSession = createAsyncThunk(
 /* ─── Slice ──────────────────────────────────────────────────────────────── */
 const initialState = {
   user: null,
-  token: localStorage.getItem('accessToken') || null,
+  token: null,          // no longer stored — lives in HttpOnly cookie
   role: null,
+  permissions: [],
   isAuthenticated: false,
-  loading: false,
+  // Show spinner on refresh only if a session flag exists (user was logged in).
+  loading: hasSession(),
   error: null,
   otpSent: false,
 }
@@ -111,8 +129,9 @@ const authSlice = createSlice({
       .addCase(registerUser.fulfilled, (state, { payload }) => {
         state.loading = false
         state.user = payload.data.user
-        state.token = payload.accessToken
+        state.token = null                     // token is in HttpOnly cookie
         state.role = payload.data.user.role
+        state.permissions = payload.permissions ?? []
         state.isAuthenticated = true
         state.error = null
       })
@@ -130,8 +149,9 @@ const authSlice = createSlice({
       .addCase(loginUser.fulfilled, (state, { payload }) => {
         state.loading = false
         state.user = payload.data.user
-        state.token = payload.accessToken
+        state.token = null                     // token is in HttpOnly cookie
         state.role = payload.data.user.role
+        state.permissions = payload.permissions ?? []
         state.isAuthenticated = true
         state.error = null
       })
@@ -145,6 +165,7 @@ const authSlice = createSlice({
       state.user = null
       state.token = null
       state.role = null
+      state.permissions = []
       state.isAuthenticated = false
       state.loading = false
       state.error = null
@@ -158,8 +179,9 @@ const authSlice = createSlice({
       .addCase(restoreSession.fulfilled, (state, { payload }) => {
         state.loading = false
         state.user = payload.user
-        state.token = payload.token
+        state.token = null                     // token is in HttpOnly cookie
         state.role = payload.user.role
+        state.permissions = payload.permissions ?? []
         state.isAuthenticated = true
         state.error = null
       })
@@ -169,6 +191,7 @@ const authSlice = createSlice({
         state.token = null
         state.user = null
         state.role = null
+        state.permissions = []
       })
   },
 })

@@ -7,6 +7,7 @@ import { Snackbar, Alert } from '@mui/material'
 import { hideSnackbar } from './store/slices/uiSlice'
 import { restoreSession } from './store/slices/authSlice'
 import useInactivityLogout from './hooks/useInactivityLogout'
+import ErrorBoundary from './components/common/ErrorBoundary'
 
 const themes = {
   student: studentTheme,
@@ -29,7 +30,9 @@ function AppContent() {
 
   return (
     <>
-      <AppRoutes />
+      <ErrorBoundary>
+        <AppRoutes />
+      </ErrorBoundary>
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}

@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Box, CircularProgress } from '@mui/material'
 import ProtectedRoute from './ProtectedRoute'
+import ErrorBoundary from '../components/common/ErrorBoundary'
 
 // Layouts — always needed when the user is logged in, so kept eager.
 import StudentLayout from '../components/layout/StudentLayout'
@@ -62,11 +63,26 @@ const Fallback = () => (
   </Box>
 )
 
+// Lightweight fallback for nested route transitions
+const RouteFallback = () => (
+  <Box sx={{ display: 'flex', justifyContent: 'center', pt: 10 }}>
+    <CircularProgress size={32} />
+  </Box>
+)
+
+// Wraps a lazy element in its own Suspense + ErrorBoundary so only the
+// content area reacts to loading/errors; layout stays visible.
+const S = ({ children }) => (
+  <ErrorBoundary inline>
+    <Suspense fallback={<RouteFallback />}>{children}</Suspense>
+  </ErrorBoundary>
+)
+
 export default function AppRoutes() {
   return (
     <Suspense fallback={<Fallback />}>
       <Routes>
-        {/* Public Routes */}
+        {/* Public Routes — eager, no extra Suspense needed */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -78,70 +94,78 @@ export default function AppRoutes() {
         {/* ============ STUDENT ROUTES ============ */}
         <Route path="/student" element={
           <ProtectedRoute allowedRoles={['student']}>
-            <StudentLayout />
+            <ErrorBoundary>
+              <StudentLayout />
+            </ErrorBoundary>
           </ProtectedRoute>
         }>
           <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<StudentDashboard />} />
-          <Route path="subjects" element={<SubjectsPage />} />
-          <Route path="subjects/:subjectId" element={<TopicsPage />} />
-          <Route path="topics/:topicId/lessons" element={<LessonsPage />} />
-          <Route path="quizzes" element={<QuizListPage />} />
-          <Route path="quiz/:quizId" element={<QuizPage />} />
-          <Route path="quiz/:quizId/result" element={<QuizResultPage />} />
-          <Route path="leaderboard" element={<LeaderboardPage />} />
-          <Route path="achievements" element={<AchievementsPage />} />
-          <Route path="progress" element={<ProgressPage />} />
-          <Route path="attempts" element={<AttemptsHistoryPage />} />
-          <Route path="lessons" element={<AllLessonsPage />} />
+          <Route path="dashboard"                element={<S><StudentDashboard /></S>} />
+          <Route path="subjects"                 element={<S><SubjectsPage /></S>} />
+          <Route path="subjects/:subjectId"      element={<S><TopicsPage /></S>} />
+          <Route path="topics/:topicId/lessons"  element={<S><LessonsPage /></S>} />
+          <Route path="lessons"                  element={<S><AllLessonsPage /></S>} />
+          <Route path="quizzes"                  element={<S><QuizListPage /></S>} />
+          <Route path="quiz/:quizId"             element={<S><QuizPage /></S>} />
+          <Route path="quiz/:quizId/result"      element={<S><QuizResultPage /></S>} />
+          <Route path="leaderboard"              element={<S><LeaderboardPage /></S>} />
+          <Route path="achievements"             element={<S><AchievementsPage /></S>} />
+          <Route path="progress"                 element={<S><ProgressPage /></S>} />
+          <Route path="attempts"                 element={<S><AttemptsHistoryPage /></S>} />
         </Route>
 
         {/* ============ TEACHER ROUTES ============ */}
         <Route path="/teacher" element={
           <ProtectedRoute allowedRoles={['teacher']}>
-            <TeacherLayout />
+            <ErrorBoundary>
+              <TeacherLayout />
+            </ErrorBoundary>
           </ProtectedRoute>
         }>
           <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<TeacherDashboard />} />
-          <Route path="content" element={<ContentManagementPage />} />
-          <Route path="content/create" element={<ContentManagementPage />} />
-          <Route path="quizzes" element={<QuizManagementPage />} />
-          <Route path="quizzes/create" element={<QuizManagementPage />} />
-          <Route path="reports" element={<TeacherReportsPage />} />
-          <Route path="badges" element={<BadgesPage />} />
-          <Route path="communication" element={<CommunicationPage />} />
-          <Route path="classes" element={<ClassesPage />} />
-          <Route path="students/:studentId" element={<StudentProgressPage />} />
+          <Route path="dashboard"          element={<S><TeacherDashboard /></S>} />
+          <Route path="content"            element={<S><ContentManagementPage /></S>} />
+          <Route path="content/create"     element={<S><ContentManagementPage /></S>} />
+          <Route path="quizzes"            element={<S><QuizManagementPage /></S>} />
+          <Route path="quizzes/create"     element={<S><QuizManagementPage /></S>} />
+          <Route path="reports"            element={<S><TeacherReportsPage /></S>} />
+          <Route path="badges"             element={<S><BadgesPage /></S>} />
+          <Route path="communication"      element={<S><CommunicationPage /></S>} />
+          <Route path="classes"            element={<S><ClassesPage /></S>} />
+          <Route path="students/:studentId" element={<S><StudentProgressPage /></S>} />
         </Route>
 
         {/* ============ PARENT ROUTES ============ */}
         <Route path="/parent" element={
           <ProtectedRoute allowedRoles={['parent']}>
-            <ParentLayout />
+            <ErrorBoundary>
+              <ParentLayout />
+            </ErrorBoundary>
           </ProtectedRoute>
         }>
           <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<ParentDashboard />} />
-          <Route path="child-progress" element={<ChildProgressPage />} />
-          <Route path="reports" element={<ParentReportsPage />} />
-          <Route path="communication" element={<ParentCommunicationPage />} />
+          <Route path="dashboard"       element={<S><ParentDashboard /></S>} />
+          <Route path="child-progress"  element={<S><ChildProgressPage /></S>} />
+          <Route path="reports"         element={<S><ParentReportsPage /></S>} />
+          <Route path="communication"   element={<S><ParentCommunicationPage /></S>} />
         </Route>
 
         {/* ============ ADMIN ROUTES ============ */}
         <Route path="/admin" element={
           <ProtectedRoute allowedRoles={['admin', 'school_admin', 'super_admin']}>
-            <AdminLayout />
+            <ErrorBoundary>
+              <AdminLayout />
+            </ErrorBoundary>
           </ProtectedRoute>
         }>
           <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="users" element={<UserManagementPage />} />
-          <Route path="content" element={<ContentModerationPage />} />
-          <Route path="analytics" element={<AdminAnalyticsPage />} />
-          <Route path="feedback" element={<FeedbackManagementPage />} />
-          <Route path="badges" element={<BadgeManagementPage />} />
-          <Route path="schools" element={<SchoolManagementPage />} />
+          <Route path="dashboard"  element={<S><AdminDashboard /></S>} />
+          <Route path="users"      element={<S><UserManagementPage /></S>} />
+          <Route path="content"    element={<S><ContentModerationPage /></S>} />
+          <Route path="analytics"  element={<S><AdminAnalyticsPage /></S>} />
+          <Route path="feedback"   element={<S><FeedbackManagementPage /></S>} />
+          <Route path="badges"     element={<S><BadgeManagementPage /></S>} />
+          <Route path="schools"    element={<S><SchoolManagementPage /></S>} />
         </Route>
 
         {/* 404 */}
