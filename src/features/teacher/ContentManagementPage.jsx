@@ -13,6 +13,7 @@ import { subjectsApi, topicsApi, lessonsApi } from '../../services/apiCatalog'
 
 const LESSON_TYPES = ['lesson', 'video', 'activity']
 
+const emptySubjectForm = { name: '', icon: '📖', color: '#6C63FF', bgGradient: 'linear-gradient(135deg, #6C63FF 0%, #A78BFA 100%)', description: '' }
 const emptyTopicForm  = { name: '', icon: '📖', difficulty: 'easy', order: 0, grade: [] }
 const emptyLessonForm = { title: '', type: 'lesson', duration: 10, xp: 50, content: '', keyPoints: [], order: 1 }
 
@@ -34,6 +35,7 @@ export default function ContentManagementPage() {
   // ── Dialogs ─────────────────────────────────────────────────────────────
   const [topicDialog,  setTopicDialog]  = useState(null)   // { mode, form }
   const [lessonDialog, setLessonDialog] = useState(null)
+  const [subjectDialog, setSubjectDialog] = useState(null) // { form }
   const [confirmDel,   setConfirmDel]   = useState(null)   // { kind, item }
 
   // ── Initial load: subjects ──────────────────────────────────────────────
@@ -71,6 +73,25 @@ export default function ContentManagementPage() {
 
   const selectedSubject = useMemo(() => subjects.find(s => s._id === subjectId), [subjects, subjectId])
   const selectedTopic   = useMemo(() => topics.find(t => t._id === topicId), [topics, topicId])
+
+  /* ───────── Subject handlers ───────── */
+  const saveSubject = async () => {
+    if (!subjectDialog) return
+    setBusy(true)
+    try {
+      const res = await subjectsApi.create(subjectDialog.form)
+      const created = res.data?.subject ?? res.subject
+      if (created) {
+        setSubjects(prev => [...prev, created])
+        setSubjectId(created._id)
+      }
+      setSubjectDialog(null)
+    } catch (e) {
+      alert(e?.response?.data?.message || 'Failed to save subject.')
+    } finally {
+      setBusy(false)
+    }
+  }
 
   /* ───────── Topic handlers ───────── */
   const openCreateTopic = () => setTopicDialog({ mode: 'create', form: { ...emptyTopicForm } })
@@ -186,6 +207,9 @@ export default function ContentManagementPage() {
             </FormControl>
 
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              <Button variant="outlined" startIcon={<AddRoundedIcon />} onClick={() => setSubjectDialog({ form: { ...emptySubjectForm } })}>
+                Add Subject
+              </Button>
               <Button variant="outlined" startIcon={<AddRoundedIcon />} disabled={!subjectId} onClick={openCreateTopic}>
                 Add Topic
               </Button>
@@ -262,6 +286,33 @@ export default function ContentManagementPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Subject dialog */}
+      <Dialog open={Boolean(subjectDialog)} onClose={() => !busy && setSubjectDialog(null)} fullWidth maxWidth="sm">
+        <DialogTitle>New Subject</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <TextField label="Name" autoFocus fullWidth
+              value={subjectDialog?.form?.name ?? ''}
+              onChange={e => setSubjectDialog(d => ({ ...d, form: { ...d.form, name: e.target.value } }))} />
+            <TextField label="Icon (emoji)" fullWidth
+              value={subjectDialog?.form?.icon ?? ''}
+              onChange={e => setSubjectDialog(d => ({ ...d, form: { ...d.form, icon: e.target.value } }))} />
+            <TextField label="Description" fullWidth multiline rows={2}
+              value={subjectDialog?.form?.description ?? ''}
+              onChange={e => setSubjectDialog(d => ({ ...d, form: { ...d.form, description: e.target.value } }))} />
+            <TextField label="Color (hex)" fullWidth
+              value={subjectDialog?.form?.color ?? ''}
+              onChange={e => setSubjectDialog(d => ({ ...d, form: { ...d.form, color: e.target.value } }))} />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSubjectDialog(null)} disabled={busy}>Cancel</Button>
+          <Button onClick={saveSubject} variant="contained" disabled={busy || !subjectDialog?.form?.name}>
+            {busy ? 'Saving…' : 'Create Subject'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Topic dialog */}
       <Dialog open={Boolean(topicDialog)} onClose={() => !busy && setTopicDialog(null)} fullWidth maxWidth="sm">

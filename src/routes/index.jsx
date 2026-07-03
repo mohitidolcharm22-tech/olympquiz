@@ -29,6 +29,7 @@ const LeaderboardPage   = lazy(() => import('../features/student/LeaderboardPage
 const AchievementsPage  = lazy(() => import('../features/student/AchievementsPage'))
 const ProgressPage      = lazy(() => import('../features/student/ProgressPage'))
 const AttemptsHistoryPage = lazy(() => import('../features/student/AttemptsHistoryPage'))
+const AllLessonsPage      = lazy(() => import('../features/student/AllLessonsPage'))
 
 // Teacher
 const TeacherDashboard       = lazy(() => import('../features/teacher/TeacherDashboard'))
@@ -92,6 +93,7 @@ export default function AppRoutes() {
           <Route path="achievements" element={<AchievementsPage />} />
           <Route path="progress" element={<ProgressPage />} />
           <Route path="attempts" element={<AttemptsHistoryPage />} />
+          <Route path="lessons" element={<AllLessonsPage />} />
         </Route>
 
         {/* ============ TEACHER ROUTES ============ */}

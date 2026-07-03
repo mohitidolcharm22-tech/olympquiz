@@ -30,12 +30,14 @@ export default function LessonsPage() {
     Promise.all([
       topicsApi.getOne(topicId),
       topicsApi.getLessons(topicId),
-      progressApi.getCompletedLessons(),
+      progressApi.getCompletedLessons().catch(() => null),
     ])
       .then(([topData, lesData, progData]) => {
-        setTopic(topData.data.topic)
-        setLessonList(lesData.data.lessons)
-        const ids = (progData.data?.user?.completedLessons || []).map(id => id.toString())
+        setTopic(topData?.data?.topic ?? topData?.topic ?? topData?.data ?? null)
+        const lessons = lesData?.data?.lessons ?? lesData?.lessons ?? lesData?.data ?? []
+        const lessonArr = Array.isArray(lessons) ? lessons : []
+        setLessonList(lessonArr)
+        const ids = (progData?.data?.user?.completedLessons ?? progData?.user?.completedLessons ?? []).map(id => id.toString())
         setCompletedLessons(new Set(ids))
       })
       .catch(() => setError('Failed to load lessons.'))
@@ -48,15 +50,30 @@ export default function LessonsPage() {
     setExpanded(isExpanded ? lessonId : null)
   }
 
+  const [saveError, setSaveError] = useState('')
+
   const handleComplete = (lesson, idx) => {
+    setSaveError('')
+    // Optimistically mark as done
     setCompletedLessons(prev => new Set([...prev, lesson._id]))
-    // Persist to backend and sync Redux user with the server's new stats / xp / level.
     lessonsApi.complete(lesson._id)
       .then(res => {
-        const u = res?.data?.user
+        const u = res?.data?.user ?? res?.data?.data?.user
         if (u) dispatch(updateUser(u))
+        // Update local completedLessons from server response
+        const ids = u?.completedLessons
+        if (ids) setCompletedLessons(new Set(ids.map(String)))
       })
-      .catch(() => {})
+      .catch(err => {
+        // Revert optimistic update
+        setCompletedLessons(prev => {
+          const next = new Set(prev)
+          next.delete(lesson._id)
+          return next
+        })
+        const msg = err?.response?.data?.message || 'Failed to save progress. Please try again.'
+        setSaveError(msg)
+      })
     if (idx < lessonList.length - 1) {
       setExpanded(lessonList[idx + 1]._id)
     } else {
@@ -71,7 +88,7 @@ export default function LessonsPage() {
     <Box sx={{ p: 3 }}>
       <Alert
         severity="error"
-        action={<Button color="inherit" size="small" onClick={load}>Retry</Button>}
+        action={<Button variant="text" color="inherit" size="small" onClick={load}>Retry</Button>}
       >
         {error}
       </Alert>
@@ -79,11 +96,33 @@ export default function LessonsPage() {
   )
 
   if (!lessonList.length) return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 3, maxWidth: 800, mx: 'auto' }}>
       <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 2 }}>
-        <Button startIcon={<ArrowBackRoundedIcon />} onClick={() => navigate(-1)}>Back</Button>
+        <Button variant="text" startIcon={<ArrowBackRoundedIcon />} onClick={() => navigate(-1)}>Back</Button>
       </Box>
-      <Typography>No lessons found for this topic yet.</Typography>
+      {topic && (
+        <Typography variant="h6" fontWeight={700} sx={{ mb: 3 }}>
+          {topic.icon} {topic.name}
+        </Typography>
+      )}
+      <Box sx={{
+        textAlign: 'center', py: 8, px: 3,
+        bgcolor: 'background.paper', borderRadius: '20px',
+        border: '2px dashed', borderColor: 'divider',
+      }}>
+        <Typography variant="h2" sx={{ mb: 2 }}>📖</Typography>
+        <Typography variant="h6" fontWeight={700} gutterBottom>
+          No lessons yet
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          Lessons for this topic haven{"'"}t been added yet.
+          Check back soon or explore other topics.
+        </Typography>
+        <Button variant="contained" startIcon={<ArrowBackRoundedIcon />} onClick={() => navigate(-1)}
+          sx={{ borderRadius: '10px' }}>
+          Browse Other Topics
+        </Button>
+      </Box>
     </Box>
   )
 
@@ -95,7 +134,7 @@ export default function LessonsPage() {
     <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 800, mx: 'auto' }}>
       {/* Back button — left-aligned */}
       <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 2 }}>
-        <Button startIcon={<ArrowBackRoundedIcon />} onClick={() => navigate(-1)}>Back</Button>
+        <Button variant="text" startIcon={<ArrowBackRoundedIcon />} onClick={() => navigate(-1)}>Back</Button>
       </Box>
 
       {/* Topic Header */}
@@ -115,6 +154,10 @@ export default function LessonsPage() {
           <Chip label="🎉 All Lessons Complete!" color="success" size="small" sx={{ mt: 1, fontWeight: 700 }} />
         )}
       </Box>
+
+      {saveError && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setSaveError('')}>{saveError}</Alert>
+      )}
 
       {/* Lesson Accordions */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>

@@ -46,7 +46,7 @@ export default function StudentDashboard() {
         progress[sid] = Math.round(b.total / b.count)
       }
       setSubjectProgress(progress)
-      setAttemptsFailed(attemptsErrored)
+      setAttemptsFailed(false)
     }).catch(console.error)
       .finally(() => setLoading(false))
   }, [])
@@ -109,16 +109,10 @@ export default function StudentDashboard() {
         </Grid>
       </Grid>
 
-      {attemptsFailed && (
-        <Alert severity="warning" sx={{ mb: 2, borderRadius: '12px' }}>
-          Couldn{'"'}t load your recent quiz attempts — subject progress percentages may be out of date.
-        </Alert>
-      )}
-
-      {/* Subjects */}
+{/* Subjects */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
         <Typography variant="h6" fontWeight={700}>📖 My Subjects</Typography>
-        <Button size="small" endIcon={<ArrowForwardRoundedIcon />} onClick={() => navigate('/student/subjects')}>View All</Button>
+        <Button variant="text" size="small" endIcon={<ArrowForwardRoundedIcon />} onClick={() => navigate('/student/subjects')}>View All</Button>
       </Box>
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {subjects.map(subject => (
@@ -135,7 +129,7 @@ export default function StudentDashboard() {
       {/* Recent Quizzes */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
         <Typography variant="h6" fontWeight={700}>🎯 Available Quizzes</Typography>
-        <Button size="small" endIcon={<ArrowForwardRoundedIcon />} onClick={() => navigate('/student/quizzes')}>View All</Button>
+        <Button variant="text" size="small" endIcon={<ArrowForwardRoundedIcon />} onClick={() => navigate('/student/quizzes')}>View All</Button>
       </Box>
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {recentQuizzes.map(quiz => (
@@ -150,7 +144,7 @@ export default function StudentDashboard() {
         <>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
             <Typography variant="h6" fontWeight={700}>🏅 My Badges</Typography>
-            <Button size="small" endIcon={<ArrowForwardRoundedIcon />} onClick={() => navigate('/student/achievements')}>All Badges</Button>
+            <Button variant="text" size="small" endIcon={<ArrowForwardRoundedIcon />} onClick={() => navigate('/student/achievements')}>All Badges</Button>
           </Box>
           <Card sx={{ borderRadius: '16px' }}>
             <CardContent>

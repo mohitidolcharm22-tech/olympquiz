@@ -171,7 +171,7 @@ export const lessonsApi = {
 export const quizzesApi = {
   /**
    * Get quizzes with optional filters.
-   * Params: { subjectId?, topicId?, difficulty?, grade?, search? }
+   * Params: { subjectId?, topicId?, lessonId?, scope?: 'general', difficulty?, grade?, search? }
    */
   getAll: (params = {}) =>
     api.get('/quizzes', { params }).then(r => r.data),

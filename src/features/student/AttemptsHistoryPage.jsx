@@ -46,7 +46,7 @@ export default function AttemptsHistoryPage() {
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}
-          action={<Button color="inherit" size="small" onClick={load}>Retry</Button>}>
+          action={<Button variant="text" color="inherit" size="small" onClick={load}>Retry</Button>}>
           {error}
         </Alert>
       )}

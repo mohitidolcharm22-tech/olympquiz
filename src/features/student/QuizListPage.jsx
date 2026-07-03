@@ -1,4 +1,4 @@
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { Box, Grid, Typography, Chip, InputAdornment, TextField, CircularProgress, Alert, Button } from '@mui/material'
 import { useState, useEffect, useMemo } from 'react'
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded'
@@ -23,6 +23,7 @@ const difficultyFilters = [
 export default function QuizListPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate  = useNavigate()
+  const location  = useLocation()
 
   // Topic filter comes from the URL (?topicId=&topicName=) so the link is
   // shareable and survives a reload. TopicsPage navigates here with these params.
@@ -43,20 +44,25 @@ export default function QuizListPage() {
     setLoading(true)
     setError('')
     const params = topicId ? { topicId } : {}
-    Promise.all([
-      quizzesApi.getAll(params),
-      quizzesApi.getMyAttempts(),
-    ])
-      .then(([quizData, attemptsData]) => {
-        setAllQuizzes(quizData.data.quizzes)
-        const ids = new Set((attemptsData.data.attempts ?? []).map(a => String(a.quizId?._id ?? a.quizId)))
-        setCompletedIds(ids)
+    quizzesApi.getAll(params)
+      .then(quizData => {
+        const list = quizData?.data?.quizzes ?? quizData?.quizzes ?? quizData?.data ?? []
+        setAllQuizzes(Array.isArray(list) ? list : [])
       })
       .catch(() => setError('Failed to load quizzes.'))
       .finally(() => setLoading(false))
+
+    // Load attempts separately — don't block quizzes if this fails
+    quizzesApi.getMyAttempts()
+      .then(attemptsData => {
+        const attempts = attemptsData?.data?.attempts ?? attemptsData?.attempts ?? []
+        const ids = new Set(attempts.map(a => String(a.quizId?._id ?? a.quizId)))
+        setCompletedIds(ids)
+      })
+      .catch(() => { /* attempts unavailable — show all quizzes as not attempted */ })
   }
 
-  useEffect(() => { load() }, [topicId]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load() }, [location.key]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const clearTopicFilter = () => {
     setSearchParams({}, { replace: true })
@@ -91,7 +97,7 @@ export default function QuizListPage() {
           severity="info"
           sx={{ mb: 2, borderRadius: '12px' }}
           action={
-            <Button color="inherit" size="small" startIcon={<ClearRoundedIcon />} onClick={clearTopicFilter}>
+            <Button variant="text" color="inherit" size="small" startIcon={<ClearRoundedIcon />} onClick={clearTopicFilter}>
               Show all
             </Button>
           }
@@ -134,7 +140,7 @@ export default function QuizListPage() {
         <Alert
           severity="error"
           sx={{ mb: 2 }}
-          action={<Button color="inherit" size="small" onClick={load}>Retry</Button>}
+          action={<Button variant="text" color="inherit" size="small" onClick={load}>Retry</Button>}
         >
           {error}
         </Alert>

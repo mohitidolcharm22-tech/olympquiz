@@ -15,6 +15,7 @@ import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded'
 import LeaderboardRoundedIcon from '@mui/icons-material/LeaderboardRounded'
 import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded'
 import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded'
+import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded'
 import FeedbackRoundedIcon from '@mui/icons-material/FeedbackRounded'
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded'
 import { logoutUser } from '../../store/slices/authSlice'
@@ -23,6 +24,7 @@ import { feedbackApi } from '../../services/apiCatalog'
 const navItems = [
   { label: 'Home', icon: <HomeRoundedIcon />, path: '/student/dashboard' },
   { label: 'Learn', icon: <MenuBookRoundedIcon />, path: '/student/subjects' },
+  { label: 'Lessons', icon: <AutoStoriesRoundedIcon />, path: '/student/lessons' },
   { label: 'Quiz', icon: <QuizRoundedIcon />, path: '/student/quizzes' },
   { label: 'Leaders', icon: <LeaderboardRoundedIcon />, path: '/student/leaderboard' },
   { label: 'Progress', icon: <TrendingUpRoundedIcon />, path: '/student/progress' },

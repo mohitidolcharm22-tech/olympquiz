@@ -317,7 +317,7 @@ function AssignDialog({ quiz, classes, onClose, onSaved }) {
   )
 }
 
-const emptyQuizForm = { title: '', subjectId: '', grade: '3', difficulty: 'easy', durationMinutes: 10, xpReward: 50, quizType: 'test', questionsToServe: '', assignedClassIds: [] }
+const emptyQuizForm = { title: '', scope: 'general', subjectId: '', topicId: '', grade: '3', difficulty: 'easy', durationMinutes: 10, xpReward: 50, quizType: 'test', questionsToServe: '', assignedClassIds: [] }
 
 export default function QuizManagementPage() {
 
@@ -328,6 +328,7 @@ export default function QuizManagementPage() {
   const [loadingList,  setLoadingList]  = useState(true)
   const [listError,    setListError]    = useState('')
   const [subjects,     setSubjects]     = useState([])
+  const [topics,       setTopics]       = useState([])
   const [classes,      setClasses]      = useState([])
   const [saveError,    setSaveError]    = useState('')
 
@@ -339,7 +340,7 @@ export default function QuizManagementPage() {
         setSubjects(subs)
         setClasses(cData.data?.classes ?? [])
         // set default subjectId once subjects are loaded
-        if (subs.length) setQuizForm(f => ({ ...f, subjectId: f.subjectId || subs[0]._id }))
+        if (subs.length) setQuizForm(f => ({ ...f, subjectId: f.subjectId || '' }))
       })
       .catch(() => setListError('Failed to load data. Is the backend running?'))
       .finally(() => setLoadingList(false))
@@ -365,7 +366,19 @@ export default function QuizManagementPage() {
   const [aiQuestions,  setAiQuestions]  = useState([])
   const [aiGenerated,  setAiGenerated]  = useState(false)
   const [aiError,      setAiError]      = useState('')
+  const [loadingQuestions, setLoadingQuestions] = useState(false)
   const [quizForm,     setQuizForm]     = useState(emptyQuizForm)
+
+  // Cascade: load topics when scope/subjectId changes
+  useEffect(() => {
+    if (quizForm.scope === 'topic' && quizForm.subjectId) {
+      subjectsApi.getTopics(quizForm.subjectId)
+        .then(r => setTopics(r?.data?.topics ?? r?.topics ?? r?.data ?? []))
+        .catch(() => setTopics([]))
+    } else {
+      setTopics([])
+    }
+  }, [quizForm.scope, quizForm.subjectId])
 
   const filtered = quizList
     .filter(q => {
@@ -388,7 +401,8 @@ export default function QuizManagementPage() {
     })
 
   const openCreate = () => {
-    setQuizForm({ ...emptyQuizForm, subjectId: subjects[0]?._id || '' })
+    setQuizForm({ ...emptyQuizForm })
+    setTopics([])
     setAiPrompt('')
     setAiQuestions([])
     setAiGenerated(false)
@@ -415,17 +429,21 @@ export default function QuizManagementPage() {
 
     try {
       const systemPrompt = `You are an expert quiz creator for a school education platform called OlympQuiz.
-Generate exactly ${requestedCount} MCQ questions for Grade ${quizForm.grade} students.
+Generate exactly ${requestedCount} questions for Grade ${quizForm.grade} students.
 Subject: ${selectedSubjectName}. Difficulty: ${quizForm.difficulty}.
 ${aiPrompt ? `Additional instruction: ${aiPrompt}` : ''}
+You may use any of these question types: mcq, truefalse, fillinblank, matching, sequence, oddoneout.
+Default to mcq unless the prompt or context suggests another type.
 Rules:
-- Each question must have exactly 4 distinct options.
-- correctAnswer must be an exact copy of one of the options.
 - Keep language age-appropriate for Grade ${quizForm.grade}.
-- Make every question unique and different from each other.
+- Make every question unique.
 - Return ONLY a valid JSON array — no markdown, no explanation outside the array.
-JSON format:
-[{"text":"...","options":["A","B","C","D"],"correctAnswer":"B","explanation":"Brief explanation.","points":${pts}}]`
+JSON format per type:
+- mcq/oddoneout: {"type":"mcq","text":"...","options":["A","B","C","D"],"correctAnswer":"B","explanation":"...","points":${pts}}
+- truefalse:     {"type":"truefalse","text":"...","options":["True","False"],"correctAnswer":"True","explanation":"...","points":${pts}}
+- fillinblank:   {"type":"fillinblank","text":"The capital of France is ___.","correctAnswer":"Paris","explanation":"...","points":${pts}}
+- matching:      {"type":"matching","text":"Match the following","pairs":[{"left":"...","right":"..."}],"explanation":"...","points":${pts}}
+- sequence:      {"type":"sequence","text":"Arrange in order","items":["Step 1","Step 2","Step 3"],"correctOrder":["Step 1","Step 2","Step 3"],"explanation":"...","points":${pts}}`
 
       const res = await fetch('/api/generate-questions', {
         method: 'POST',
@@ -479,7 +497,8 @@ JSON format:
     const questions = aiQuestions.length > 0 ? aiQuestions : []
     const payload = {
       title:           quizForm.title,
-      subjectId:       quizForm.subjectId,
+      subjectId:       quizForm.scope !== 'general' ? (quizForm.subjectId || null) : null,
+      topicId:         quizForm.scope === 'topic' ? (quizForm.topicId || null) : null,
       grade:           quizForm.grade,
       difficulty:      quizForm.difficulty,
       durationMinutes: quizForm.durationMinutes,
@@ -510,11 +529,26 @@ JSON format:
     setAiGenerated(false)
   }
 
-  const openEdit = (quiz) => {
+  const openEdit = async (quiz) => {
     if (attemptedQuizIds.includes(quiz._id ?? quiz.id)) return
+    setShowCreate(true)
+    setEditQuiz(quiz)
+    setAiQuestions([])
+    setAiGenerated(false)
+    setLoadingQuestions(true)
+    // Populate form immediately with summary data
+    const topicId   = quiz.topicId?._id   ?? quiz.topicId   ?? ''
+    const subjectId = quiz.subjectId?._id ?? quiz.subjectId ?? ''
+    const scope = topicId ? 'topic' : subjectId ? 'subject' : 'general'
+    // Pre-load topics for the edit form
+    if (subjectId) subjectsApi.getTopics(subjectId).then(r => {
+      setTopics(r?.data?.topics ?? r?.topics ?? r?.data ?? [])
+    }).catch(() => {})
     setQuizForm({
       title:           quiz.title,
-      subjectId:       quiz.subjectId?._id ?? quiz.subjectId ?? '',
+      scope,
+      subjectId,
+      topicId,
       grade:           String(quiz.grade || '3'),
       difficulty:      quiz.difficulty,
       durationMinutes: quiz.durationMinutes,
@@ -523,10 +557,17 @@ JSON format:
       questionsToServe: quiz.questionsToServe ?? '',
       assignedClassIds: (quiz.assignedClassIds || []).map(c => c?._id || c),
     })
-    setAiQuestions(quiz.questions || [])
-    setAiGenerated(false)
-    setEditQuiz(quiz)
-    setShowCreate(true)
+    // Fetch full quiz to get populated questions
+    try {
+      const full = await quizzesApi.getOne(quiz._id ?? quiz.id)
+      // Handle all common backend response shapes
+      const fullQuiz = full?.quiz ?? full?.data?.quiz ?? full?.data ?? full
+      setAiQuestions(fullQuiz?.questions || quiz.questions || [])
+    } catch {
+      setAiQuestions(quiz.questions || [])
+    } finally {
+      setLoadingQuestions(false)
+    }
   }
 
   // subjectId may be a populated object { _id, name } or a raw ObjectId string
@@ -645,7 +686,12 @@ JSON format:
                     </Box>
                   </TableCell>
                   <TableCell>
-                    <Chip label={subjectLabel(quiz.subjectId)} size="small" sx={{ fontWeight: 600, fontSize: '0.7rem' }} />
+                    {quiz.topicId
+                      ? <Chip label={`📖 ${quiz.topicId?.name || 'Topic'}`} size="small" color="info" sx={{ fontWeight: 600, fontSize: '0.7rem' }} />
+                      : quiz.subjectId
+                        ? <Chip label={`📚 ${subjectLabel(quiz.subjectId)}`} size="small" sx={{ fontWeight: 600, fontSize: '0.7rem' }} />
+                        : <Chip label="🌐 General" size="small" variant="outlined" sx={{ fontWeight: 600, fontSize: '0.7rem' }} />
+                    }
                   </TableCell>
                   <TableCell>Grade {quiz.grade}</TableCell>
                   <TableCell>{quiz.totalQuestions || quiz.questions?.length || 0}</TableCell>
@@ -725,13 +771,40 @@ JSON format:
             </Grid>
             <Grid item xs={12} sm={3}>
               <FormControl fullWidth>
-                <InputLabel>Subject</InputLabel>
-                <Select value={quizForm.subjectId} label="Subject"
-                  onChange={e => setQuizForm(f => ({ ...f, subjectId: e.target.value }))}>
-                  {subjects.map(s => <MenuItem key={s._id} value={s._id}>{s.icon} {s.name}</MenuItem>)}
+                <InputLabel>Scope</InputLabel>
+                <Select value={quizForm.scope || 'general'} label="Scope"
+                  onChange={e => setQuizForm(f => ({ ...f, scope: e.target.value, subjectId: '', topicId: '' }))}>
+                  <MenuItem value="general">🌐 General (no attachment)</MenuItem>
+                  <MenuItem value="subject">📚 Subject</MenuItem>
+                  <MenuItem value="topic">📖 Topic</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
+            {quizForm.scope !== 'general' && (
+              <Grid item xs={12} sm={3}>
+                <FormControl fullWidth>
+                  <InputLabel>Subject</InputLabel>
+                  <Select value={quizForm.subjectId} label="Subject"
+                    onChange={e => setQuizForm(f => ({ ...f, subjectId: e.target.value, topicId: '' }))}>
+                    {subjects.map(s => <MenuItem key={s._id} value={s._id}>{s.icon} {s.name}</MenuItem>)}
+                  </Select>
+                </FormControl>
+              </Grid>
+            )}
+            {quizForm.scope === 'topic' && (
+              <Grid item xs={12} sm={3}>
+                <FormControl fullWidth>
+                  <InputLabel>Topic</InputLabel>
+                  <Select value={quizForm.topicId} label="Topic"
+                    onChange={e => setQuizForm(f => ({ ...f, topicId: e.target.value }))}>
+                    {topics.length === 0
+                      ? <MenuItem disabled>Select a subject first</MenuItem>
+                      : topics.map(t => <MenuItem key={t._id} value={t._id}>{t.icon} {t.name}</MenuItem>)
+                    }
+                  </Select>
+                </FormControl>
+              </Grid>
+            )}
             <Grid item xs={6} sm={3}>
               <FormControl fullWidth>
                 <InputLabel>Grade</InputLabel>
@@ -836,7 +909,7 @@ JSON format:
             )}
             {aiGenerated && !aiError && (
               <Alert severity="success" sx={{ mt: 1.5 }}>
-                ✅ {aiQuestions.length} questions generated{openAiKey ? ' by ChatGPT' : ''}! Edit or add more below.
+                ✅ {aiQuestions.length} questions generated by ChatGPT! Edit or add more below.
               </Alert>
             )}
           </Box>
@@ -870,7 +943,13 @@ JSON format:
                 </FormControl>
               </Box>
             </Box>
-            {aiQuestions.length === 0 && (
+            {loadingQuestions && (
+              <Box sx={{ textAlign: 'center', py: 3 }}>
+                <LinearProgress sx={{ borderRadius: '100px' }} />
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>Loading questions…</Typography>
+              </Box>
+            )}
+            {!loadingQuestions && aiQuestions.length === 0 && (
               <Box sx={{ textAlign: 'center', py: 3, color: 'text.secondary', bgcolor: 'action.hover', borderRadius: '12px' }}>
                 <Typography variant="body2">No questions yet. Use AI or add manually above.</Typography>
               </Box>
@@ -878,7 +957,7 @@ JSON format:
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               {aiQuestions.map((q, qi) => (
                 <QuestionEditor
-                  key={qi}
+                  key={q.id || qi}
                   index={qi}
                   question={q}
                   onChange={updated => setAiQuestions(prev => prev.map((item, i) => i === qi ? updated : item))}

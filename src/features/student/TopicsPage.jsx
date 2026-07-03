@@ -1,67 +1,71 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useSelector } from 'react-redux'
 import {
   Box, Typography, Card, CardActionArea, CardContent, Chip, Avatar, Button,
   LinearProgress, CircularProgress, Alert, Grid,
 } from '@mui/material'
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
 import QuizRoundedIcon from '@mui/icons-material/QuizRounded'
-import { subjectsApi, quizzesApi, progressApi } from '../../services/apiCatalog'
+import { subjectsApi, quizzesApi } from '../../services/apiCatalog'
 
 const difficultyColor = { easy: 'success', medium: 'warning', hard: 'error' }
 
 export default function TopicsPage() {
   const { subjectId } = useParams()
   const navigate = useNavigate()
+  const authUser = useSelector(s => s.auth.user)
+  const studentGrade = authUser?.grade || ''
   const [subject, setSubject]           = useState(null)
   const [topics, setTopics]             = useState([])
   const [completedTopicIds, setCompletedTopicIds] = useState(new Set())
-  const [completedLessonIds, setCompletedLessonIds] = useState(new Set())
   const [loading, setLoading]           = useState(true)
   const [error, setError]               = useState('')
-  const [progressWarning, setProgressWarning] = useState(false)
+
+  // Derive completedLessonIds live from Redux so it updates instantly after
+  // a student completes a lesson (LessonsPage dispatches updateUser)
+  const completedLessonIds = new Set(
+    (authUser?.completedLessons || []).map(String)
+  )
 
   const load = () => {
     setLoading(true)
     setError('')
-    setProgressWarning(false)
-    let progressFailed = false
     Promise.all([
       subjectsApi.getOne(subjectId),
-      subjectsApi.getTopics(subjectId),
-      quizzesApi.getMyAttempts().catch(() => { progressFailed = true; return { data: { attempts: [] } } }),
-      progressApi.getCompletedLessons().catch(() => { progressFailed = true; return { data: { user: { completedLessons: [] } } } }),
+      subjectsApi.getTopics(subjectId, studentGrade ? { grade: studentGrade } : {}),
+      quizzesApi.getMyAttempts().catch(() => ({ data: { attempts: [] } })),
     ])
-      .then(([subData, topData, attData, progData]) => {
-        setSubject(subData.data.subject)
-        setTopics(topData.data.topics)
+      .then(([subData, topData, attData]) => {
+        const sub = subData?.data?.subject ?? subData?.subject ?? subData?.data ?? null
+        const topList = topData?.data?.topics ?? topData?.topics ?? topData?.data ?? []
+        setSubject(sub)
+        setTopics(Array.isArray(topList) ? topList : [])
 
         // Build set of topicIds that have a completed quiz
-        const attempts = attData.data?.attempts || []
+        const attempts = attData?.data?.attempts ?? attData?.attempts ?? []
         const doneTopics = new Set(
           attempts.map(a => a.quizId?.topicId?._id || a.quizId?.topicId).filter(Boolean).map(String)
         )
         setCompletedTopicIds(doneTopics)
-
-        // Build set of completed lesson IDs
-        const doneLessons = progData.data?.user?.completedLessons || []
-        setCompletedLessonIds(new Set(doneLessons.map(String)))
-        setProgressWarning(progressFailed)
       })
       .catch(() => setError('Failed to load subject data.'))
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { load() }, [subjectId]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load() }, [subjectId, studentGrade]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) return (
     <Box sx={{ display: 'flex', justifyContent: 'center', pt: 8 }}><CircularProgress /></Box>
   )
   if (error) return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 900, mx: 'auto' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 2 }}>
+        <Button variant="text" startIcon={<ArrowBackRoundedIcon />} onClick={() => navigate('/student/subjects')}>Back to Subjects</Button>
+      </Box>
       <Alert
         severity="error"
-        action={<Button color="inherit" size="small" onClick={load}>Retry</Button>}
+        action={<Button variant="text" color="inherit" size="small" onClick={load}>Retry</Button>}
       >
         {error}
       </Alert>
@@ -74,7 +78,7 @@ export default function TopicsPage() {
   return (
     <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 900, mx: 'auto' }}>
       <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 2 }}>
-        <Button startIcon={<ArrowBackRoundedIcon />} onClick={() => navigate('/student/subjects')}>
+        <Button variant="text" startIcon={<ArrowBackRoundedIcon />} onClick={() => navigate('/student/subjects')}>
           Back to Subjects
         </Button>
       </Box>
@@ -91,16 +95,6 @@ export default function TopicsPage() {
           </Box>
         </CardContent>
       </Card>
-
-      {progressWarning && (
-        <Alert
-          severity="warning"
-          sx={{ mb: 2, borderRadius: '12px' }}
-          action={<Button color="inherit" size="small" onClick={load}>Retry</Button>}
-        >
-          Couldn{'"'}t load your progress data — completion badges below may be out of date.
-        </Alert>
-      )}
 
       {/* Topics Grid — 2 columns on desktop, 1 on mobile */}
       <Typography variant="h6" fontWeight={700} sx={{ mb: 1.5 }}>Topics</Typography>
@@ -146,6 +140,11 @@ export default function TopicsPage() {
                             sx={{ mt: 0.75, height: 6, borderRadius: '100px' }}
                           />
                         )}
+                        {!quizDone && !allLessonsDone && totalLessons > 0 && (
+                          <Typography variant="caption" sx={{ mt: 0.75, display: 'block', color: '#B45309', fontWeight: 600 }}>
+                            🔒 Complete all lessons to unlock quiz
+                          </Typography>
+                        )}
                       </Box>
                     </Box>
                   </CardContent>
@@ -156,7 +155,7 @@ export default function TopicsPage() {
                     sx={{ borderRadius: '10px', fontSize: '0.75rem' }}>
                     View Lessons
                   </Button>
-                  {!quizDone && (
+                  {!quizDone && allLessonsDone && (
                     <Button variant="contained" size="small" color="success"
                       startIcon={<QuizRoundedIcon />}
                       onClick={() => navigate(`/student/quizzes?topicId=${topic._id}&topicName=${encodeURIComponent(topic.name)}`)}
