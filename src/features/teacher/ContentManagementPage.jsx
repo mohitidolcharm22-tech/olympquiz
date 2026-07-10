@@ -10,12 +10,13 @@ import AddRoundedIcon       from '@mui/icons-material/AddRounded'
 import EditRoundedIcon      from '@mui/icons-material/EditRounded'
 import DeleteRoundedIcon    from '@mui/icons-material/DeleteRounded'
 import { subjectsApi, topicsApi, lessonsApi } from '../../services/apiCatalog'
+import { validateYoutubeUrl } from '../../utils/youtubeValidation'
 
 const LESSON_TYPES = ['lesson', 'video', 'activity']
 
 const emptySubjectForm = { name: '', icon: '📖', color: '#6C63FF', bgGradient: 'linear-gradient(135deg, #6C63FF 0%, #A78BFA 100%)', description: '' }
 const emptyTopicForm  = { name: '', icon: '📖', difficulty: 'easy', order: 0, grade: [] }
-const emptyLessonForm = { title: '', type: 'lesson', duration: 10, xp: 50, content: '', keyPoints: [], order: 1 }
+const emptyLessonForm = { title: '', type: 'lesson', duration: 10, xp: 50, content: '', youtubeUrl: '', keyPoints: [], order: 1 }
 
 export default function ContentManagementPage() {
   // ── Source data ─────────────────────────────────────────────────────────
@@ -37,6 +38,9 @@ export default function ContentManagementPage() {
   const [lessonDialog, setLessonDialog] = useState(null)
   const [subjectDialog, setSubjectDialog] = useState(null) // { form }
   const [confirmDel,   setConfirmDel]   = useState(null)   // { kind, item }
+  const [lessonError, setLessonError]   = useState('')     // validation errors for lesson dialog
+  const [youtubeValidation, setYoutubeValidation] = useState(null) // { valid, message, title } | null
+  const [validatingYoutube, setValidatingYoutube] = useState(false)
 
   // ── Initial load: subjects ──────────────────────────────────────────────
   useEffect(() => {
@@ -124,31 +128,66 @@ export default function ContentManagementPage() {
   }
 
   /* ───────── Lesson handlers ───────── */
-  const openCreateLesson = () => setLessonDialog({ mode: 'create', form: {
-    ...emptyLessonForm, order: (lessons[lessons.length - 1]?.order ?? 0) + 1,
-  }})
-  const openEditLesson   = (l) => setLessonDialog({ mode: 'edit', lesson: l, form: {
-    title: l.title, type: l.type, duration: l.duration, xp: l.xp,
-    content: l.content, keyPoints: l.keyPoints ?? [], order: l.order ?? 1,
-  }})
+  const openCreateLesson = () => {
+    setYoutubeValidation(null)
+    setLessonError('')
+    setLessonDialog({ mode: 'create', form: {
+      ...emptyLessonForm, order: (lessons[lessons.length - 1]?.order ?? 0) + 1,
+    }})
+  }
+  const openEditLesson   = (l) => {
+    console.log('📖 Loading lesson to edit:', l)
+    setYoutubeValidation(null)
+    setLessonError('')
+    setLessonDialog({ mode: 'edit', lesson: l, form: {
+      title: l.title, type: l.type, duration: l.duration, xp: l.xp,
+      content: l.content, youtubeUrl: l.youtubeUrl ?? l.videoUrl ?? '', keyPoints: l.keyPoints ?? [], order: l.order ?? 1,
+    }})
+  }
+
+  const handleYoutubeUrlBlur = async (url) => {
+    if (!url) { setYoutubeValidation(null); return }
+    setValidatingYoutube(true)
+    setYoutubeValidation(null)
+    const result = await validateYoutubeUrl(url)
+    setYoutubeValidation(result)
+    setValidatingYoutube(false)
+    if (!result.valid) {
+      setLessonError(result.message)
+    } else {
+      // Clear any previous YouTube URL error if now valid
+      if (lessonError && lessonError === (youtubeValidation?.message)) setLessonError('')
+    }
+  }
 
   const saveLesson = async () => {
     if (!lessonDialog || !topicId || !subjectId) return
+    // Block save if YouTube URL failed validation
+    if (lessonDialog.form.type === 'video' && lessonDialog.form.youtubeUrl && youtubeValidation?.valid === false) {
+      setLessonError(youtubeValidation.message)
+      return
+    }
+    setLessonError('')
     setBusy(true)
     try {
       const payload = { ...lessonDialog.form, topicId, subjectId }
+      console.log('📤 Sending lesson payload:', payload)
       if (lessonDialog.mode === 'create') {
         const res = await lessonsApi.create(payload)
         const created = res.data?.lesson
         if (created) setLessons(prev => [...prev, created])
       } else {
+        console.log('📝 Updating lesson', lessonDialog.lesson._id, 'with payload:', payload)
         const res = await lessonsApi.update(lessonDialog.lesson._id, payload)
         const updated = res.data?.lesson
+        console.log('✅ Update response:', updated)
         setLessons(prev => prev.map(l => l._id === updated?._id ? { ...l, ...updated } : l))
       }
       setLessonDialog(null)
     } catch (e) {
-      alert(e?.response?.data?.message || 'Failed to save lesson.')
+      const errorMsg = e?.response?.data?.message || 'Failed to save lesson.'
+      console.error('❌ Error saving lesson:', errorMsg, e)
+      setLessonError(errorMsg)
     } finally {
       setBusy(false)
     }
@@ -363,10 +402,15 @@ export default function ContentManagementPage() {
       </Dialog>
 
       {/* Lesson dialog */}
-      <Dialog open={Boolean(lessonDialog)} onClose={() => !busy && setLessonDialog(null)} fullWidth maxWidth="md">
+      <Dialog open={Boolean(lessonDialog)} onClose={() => !busy && (setLessonDialog(null), setLessonError(''), setYoutubeValidation(null))} fullWidth maxWidth="md">
         <DialogTitle>{lessonDialog?.mode === 'create' ? 'New Lesson' : 'Edit Lesson'}</DialogTitle>
         <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
+          {lessonError && (
+            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setLessonError('')}>
+              {lessonError}
+            </Alert>
+          )}
+          <Stack spacing={2} sx={{ mt: lessonError ? 0 : 1 }}>
             <TextField
               label="Title" autoFocus fullWidth
               value={lessonDialog?.form?.title ?? ''}
@@ -399,10 +443,56 @@ export default function ContentManagementPage() {
                 onChange={e => setLessonDialog(d => ({ ...d, form: { ...d.form, order: Number(e.target.value) } }))}
               />
             </Stack>
+            {lessonDialog?.form?.type === 'video' && (
+              <Stack spacing={1.5}>
+                <TextField
+                  label="YouTube URL"
+                  fullWidth
+                  value={lessonDialog?.form?.youtubeUrl ?? ''}
+                  onChange={e => {
+                    setLessonDialog(d => ({ ...d, form: { ...d.form, youtubeUrl: e.target.value } }))
+                    // Clear stale validation when URL is edited
+                    setYoutubeValidation(null)
+                  }}
+                  onBlur={e => handleYoutubeUrlBlur(e.target.value)}
+                  error={youtubeValidation?.valid === false}
+                  color={youtubeValidation?.valid === true ? 'success' : undefined}
+                  focused={youtubeValidation?.valid === true ? true : undefined}
+                  InputProps={{
+                    endAdornment: validatingYoutube
+                      ? <CircularProgress size={18} sx={{ mr: 1 }} />
+                      : youtubeValidation?.valid === true
+                        ? <Typography variant="caption" color="success.main" sx={{ whiteSpace: 'nowrap', mr: 1 }}>✓ Educational</Typography>
+                        : null,
+                  }}
+                  helperText={
+                    youtubeValidation?.valid === true
+                      ? `✓ "${youtubeValidation.title}" — ${youtubeValidation.categoryName}`
+                      : youtubeValidation?.valid === false
+                        ? youtubeValidation.message
+                        : 'Paste a YouTube watch, shorts, or youtu.be link. Students will watch it in the app. Tab out to validate.'
+                  }
+                />
+                <Box sx={{ p: 2, borderRadius: 2, border: '1px dashed', borderColor: 'divider', bgcolor: 'background.default' }}>
+                  <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
+                    Video upload
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+                    Uploading video files is currently disabled. Keep the logic here for later, but use YouTube links for now.
+                  </Typography>
+                  <Button variant="outlined" disabled>
+                    Upload Video (disabled)
+                  </Button>
+                </Box>
+              </Stack>
+            )}
             <TextField
               label="Content (Markdown / HTML)" multiline rows={6} fullWidth
               value={lessonDialog?.form?.content ?? ''}
               onChange={e => setLessonDialog(d => ({ ...d, form: { ...d.form, content: e.target.value } }))}
+              helperText={lessonDialog?.form?.type === 'video'
+                ? 'Optional for video lessons. Use this for lesson notes, instructions, or a short summary.'
+                : undefined}
             />
             <TextField
               label="Key points (one per line)" multiline rows={3} fullWidth
@@ -412,10 +502,17 @@ export default function ContentManagementPage() {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setLessonDialog(null)} disabled={busy}>Cancel</Button>
+          <Button onClick={() => { setLessonDialog(null); setLessonError(''); setYoutubeValidation(null) }} disabled={busy}>Cancel</Button>
           <Button
             onClick={saveLesson} variant="contained"
-            disabled={busy || !lessonDialog?.form?.title || !lessonDialog?.form?.content}
+            disabled={
+              busy ||
+              validatingYoutube ||
+              !lessonDialog?.form?.title ||
+              (lessonDialog?.form?.type === 'video'
+                ? !lessonDialog?.form?.youtubeUrl || youtubeValidation?.valid === false
+                : !lessonDialog?.form?.content)
+            }
           >
             {busy ? 'Saving…' : 'Save'}
           </Button>

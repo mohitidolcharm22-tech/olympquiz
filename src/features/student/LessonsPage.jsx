@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import {
-  Box, Typography, Button, Chip, LinearProgress,
+  Box, Typography, Button, Chip, LinearProgress, Card, CardContent,
   Accordion, AccordionSummary, AccordionDetails, Avatar, CircularProgress, Alert,
 } from '@mui/material'
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
@@ -12,6 +12,26 @@ import RadioButtonUncheckedRoundedIcon from '@mui/icons-material/RadioButtonUnch
 import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded'
 import { topicsApi, lessonsApi, progressApi } from '../../services/apiCatalog'
 import { updateUser } from '../../store/slices/authSlice'
+
+const getYoutubeEmbedUrl = (rawUrl = '') => {
+  if (!rawUrl) return ''
+
+  const value = rawUrl.trim()
+  const videoIdPatterns = [
+    /youtu\.be\/([A-Za-z0-9_-]{11})/,
+    /youtube\.com\/(?:watch\?v=|embed\/|shorts\/)([A-Za-z0-9_-]{11})/,
+    /youtube\.com\/watch\?.*[?&]v=([A-Za-z0-9_-]{11})/,
+  ]
+
+  for (const pattern of videoIdPatterns) {
+    const match = value.match(pattern)
+    if (match?.[1]) {
+      return `https://www.youtube-nocookie.com/embed/${match[1]}?controls=1&fs=1&modestbranding=1&rel=0&playsinline=1`
+    }
+  }
+
+  return ''
+}
 
 export default function LessonsPage() {
   const { topicId } = useParams()
@@ -164,6 +184,8 @@ export default function LessonsPage() {
         {lessonList.map((lesson, idx) => {
           const isCompleted = completedLessons.has(lesson._id)
           const isExpanded = expanded === lesson._id
+          const videoUrl = lesson.youtubeUrl ?? lesson.videoUrl ?? ''
+          const embedUrl = getYoutubeEmbedUrl(videoUrl)
 
           return (
             <Accordion
@@ -221,6 +243,48 @@ export default function LessonsPage() {
               </AccordionSummary>
 
               <AccordionDetails sx={{ px: 3, pb: 3, pt: 1 }}>
+                {(lesson.type === 'video' || videoUrl) && (
+                  <Card
+                    variant="outlined"
+                    sx={{ mb: 2.5, borderRadius: '16px', overflow: 'hidden', borderColor: 'divider' }}
+                  >
+                    <CardContent sx={{ p: 0 }}>
+                      <Box sx={{ px: 2, pt: 2, pb: 1.5 }}>
+                        <Typography variant="subtitle2" fontWeight={800} sx={{ mb: 0.5 }}>
+                          🎬 Video lesson
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Use the player controls to play, pause, seek, and expand to fullscreen.
+                        </Typography>
+                      </Box>
+
+                      {embedUrl ? (
+                        <Box sx={{ position: 'relative', width: '100%', pt: '56.25%', bgcolor: '#0F172A' }}>
+                          <Box
+                            component="iframe"
+                            src={embedUrl}
+                            title={lesson.title}
+                            loading="lazy"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowFullScreen
+                            sx={{
+                              position: 'absolute',
+                              inset: 0,
+                              width: '100%',
+                              height: '100%',
+                              border: 0,
+                            }}
+                          />
+                        </Box>
+                      ) : (
+                        <Box sx={{ px: 2, pb: 2 }}>
+                          <Alert severity="info">This lesson is marked as a video lesson, but no valid YouTube link was provided yet.</Alert>
+                        </Box>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
                 {/* Lesson content */}
                 <Typography variant="body1" sx={{ lineHeight: 1.85, fontSize: '1.02rem', mb: 2.5 }}>
                   {lesson.content}

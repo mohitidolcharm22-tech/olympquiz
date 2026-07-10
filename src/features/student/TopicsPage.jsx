@@ -2,11 +2,14 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import {
-  Box, Typography, Card, CardActionArea, CardContent, Chip, Avatar, Button,
+  Box, Typography, Card, CardContent, Chip, Avatar, Button,
   LinearProgress, CircularProgress, Alert, Grid,
 } from '@mui/material'
-import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
-import QuizRoundedIcon from '@mui/icons-material/QuizRounded'
+import ArrowBackRoundedIcon   from '@mui/icons-material/ArrowBackRounded'
+import QuizRoundedIcon        from '@mui/icons-material/QuizRounded'
+import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded'
+import LockRoundedIcon        from '@mui/icons-material/LockRounded'
+import MenuBookRoundedIcon    from '@mui/icons-material/MenuBookRounded'
 import { subjectsApi, quizzesApi } from '../../services/apiCatalog'
 
 const difficultyColor = { easy: 'success', medium: 'warning', hard: 'error' }
@@ -100,77 +103,140 @@ export default function TopicsPage() {
       <Typography variant="h6" fontWeight={700} sx={{ mb: 1.5 }}>Topics</Typography>
       <Grid container spacing={2}>
         {topics.map((topic) => {
-          const quizDone = completedTopicIds.has(topic._id?.toString())
-          const totalLessons = topic.lessonCount || 0
-          const lessonIds    = topic.lessonIds || []
-          const doneLessons  = lessonIds.filter(id => completedLessonIds.has(String(id))).length
+          const quizDone       = completedTopicIds.has(topic._id?.toString())
+          const totalLessons   = topic.lessonCount || 0
+          const lessonIds      = topic.lessonIds || []
+          const doneLessons    = lessonIds.filter(id => completedLessonIds.has(String(id))).length
           const allLessonsDone = totalLessons > 0 && doneLessons === totalLessons
           const topicComplete  = allLessonsDone && quizDone
+          const progress       = totalLessons > 0 ? (doneLessons / totalLessons) * 100 : 0
+
           return (
             <Grid item xs={12} sm={6} key={topic._id}>
-              <Card sx={{
-                border: '2px solid',
-                borderColor: topicComplete ? 'success.main' : 'transparent',
-                height: '100%', display: 'flex', flexDirection: 'column',
-              }}>
-                <CardActionArea onClick={() => navigate(`/student/topics/${topic._id}/lessons`)}>
-                  <CardContent sx={{ p: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Avatar sx={{
-                        width: 48, height: 48, fontSize: '1.5rem',
-                        bgcolor: `${subject.color}20`, borderRadius: '12px',
-                      }}>
-                        {topic.icon}
-                      </Avatar>
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.25 }}>
-                          <Typography variant="subtitle1" fontWeight={700} noWrap>{topic.name}</Typography>
-                          <Chip label={topic.difficulty} size="small" color={difficultyColor[topic.difficulty]}
-                            variant="outlined" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 600 }} />
-                        </Box>
-                        <Typography variant="caption" color="text.secondary">
-                          {totalLessons > 0
-                            ? `${doneLessons} / ${totalLessons} lessons`
-                            : 'No lessons yet'} · Grades: {topic.grade?.join(', ')}
+              <Card
+                onClick={() => navigate(`/student/topics/${topic._id}/lessons`)}
+                sx={{
+                  height: '100%', display: 'flex', flexDirection: 'column',
+                  border: '2px solid',
+                  borderColor: topicComplete ? 'success.main' : 'divider',
+                  borderRadius: '16px',
+                  cursor: 'pointer',
+                  transition: 'box-shadow 0.2s, transform 0.15s',
+                  '&:hover': { boxShadow: 4, transform: 'translateY(-2px)' },
+                }}
+              >
+                <CardContent sx={{ p: 2.5, pb: 1.5, flex: 1 }}>
+                  {/* Header: icon + name + difficulty */}
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, mb: 1.5 }}>
+                    <Avatar sx={{
+                      width: 44, height: 44, fontSize: '1.4rem',
+                      bgcolor: `${subject.color}18`, borderRadius: '12px', flexShrink: 0,
+                    }}>
+                      {topic.icon}
+                    </Avatar>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="subtitle1" fontWeight={700} noWrap>{topic.name}</Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mt: 0.25 }}>
+                        <Chip
+                          label={topic.difficulty}
+                          size="small"
+                          color={difficultyColor[topic.difficulty]}
+                          variant="outlined"
+                          sx={{ height: 18, fontSize: '0.62rem', fontWeight: 700 }}
+                        />
+                        <Typography variant="caption" color="text.disabled">
+                          Grades: {topic.grade?.join(', ')}
                         </Typography>
-                        {totalLessons > 0 && (
-                          <LinearProgress
-                            variant="determinate"
-                            value={(doneLessons / totalLessons) * 100}
-                            sx={{ mt: 0.75, height: 6, borderRadius: '100px' }}
-                          />
-                        )}
-                        {!quizDone && !allLessonsDone && totalLessons > 0 && (
-                          <Typography variant="caption" sx={{ mt: 0.75, display: 'block', color: '#B45309', fontWeight: 600 }}>
-                            🔒 Complete all lessons to unlock quiz
-                          </Typography>
-                        )}
                       </Box>
                     </Box>
-                  </CardContent>
-                </CardActionArea>
-                <Box sx={{ px: 2, pb: 2, pt: 0.5, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                  <Button variant="outlined" size="small"
-                    onClick={() => navigate(`/student/topics/${topic._id}/lessons`)}
-                    sx={{ borderRadius: '10px', fontSize: '0.75rem' }}>
-                    View Lessons
-                  </Button>
-                  {!quizDone && allLessonsDone && (
-                    <Button variant="contained" size="small" color="success"
+                    {topicComplete && (
+                      <CheckCircleRoundedIcon color="success" sx={{ flexShrink: 0, mt: 0.25 }} />
+                    )}
+                  </Box>
+
+                  {/* Progress bar + lesson count */}
+                  {totalLessons > 0 ? (
+                    <Box>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                        <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                          Lessons
+                        </Typography>
+                        <Typography variant="caption" fontWeight={700}
+                          color={allLessonsDone ? 'success.main' : 'text.primary'}>
+                          {doneLessons} / {totalLessons}
+                        </Typography>
+                      </Box>
+                      <LinearProgress
+                        variant="determinate"
+                        value={progress}
+                        color={allLessonsDone ? 'success' : 'primary'}
+                        sx={{ height: 7, borderRadius: '100px' }}
+                      />
+                    </Box>
+                  ) : (
+                    <Typography variant="caption" color="text.disabled">No lessons yet</Typography>
+                  )}
+                </CardContent>
+
+                {/* Footer: status badges + primary action */}
+                <Box
+                  sx={{
+                    px: 2.5, pb: 2, pt: 1,
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    borderTop: '1px solid', borderColor: 'divider',
+                  }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  {/* Status badges (left) */}
+                  <Box sx={{ display: 'flex', gap: 0.75, alignItems: 'center', flexWrap: 'wrap' }}>
+                    {allLessonsDone && (
+                      <Chip
+                        icon={<MenuBookRoundedIcon sx={{ fontSize: '0.85rem !important' }} />}
+                        label="Lessons Done"
+                        size="small"
+                        color="success"
+                        variant="outlined"
+                        sx={{ fontWeight: 700, height: 24, fontSize: '0.7rem' }}
+                      />
+                    )}
+                    {quizDone && (
+                      <Chip
+                        icon={<CheckCircleRoundedIcon sx={{ fontSize: '0.85rem !important' }} />}
+                        label="Quiz Done"
+                        size="small"
+                        color="success"
+                        sx={{ fontWeight: 700, height: 24, fontSize: '0.7rem' }}
+                      />
+                    )}
+                    {!allLessonsDone && totalLessons > 0 && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <LockRoundedIcon sx={{ fontSize: '0.85rem', color: 'text.disabled' }} />
+                        <Typography variant="caption" color="text.disabled">Quiz locked</Typography>
+                      </Box>
+                    )}
+                  </Box>
+
+                  {/* Primary action (right) */}
+                  {!quizDone && allLessonsDone ? (
+                    <Button
+                      variant="contained"
+                      size="small"
+                      color="success"
                       startIcon={<QuizRoundedIcon />}
                       onClick={() => navigate(`/student/quizzes?topicId=${topic._id}&topicName=${encodeURIComponent(topic.name)}`)}
-                      sx={{ borderRadius: '10px', fontSize: '0.75rem' }}>
-                      Appear for Quizzes
+                      sx={{ borderRadius: '10px', fontSize: '0.72rem', whiteSpace: 'nowrap', ml: 1 }}
+                    >
+                      Take Quiz
                     </Button>
-                  )}
-                  {allLessonsDone && (
-                    <Chip label="📚 Lessons Done" color="success" size="small" variant="outlined" sx={{ fontWeight: 700 }} />
-                  )}
-                  {quizDone && (
-                    <Chip label="✅ Quiz Done" color="success" size="small" sx={{ fontWeight: 700 }} />
-                  )}
-                  {topicComplete && (
-                    <Chip label="🎉 Topic Complete" color="success" size="small" sx={{ fontWeight: 800 }} />
+                  ) : (
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => navigate(`/student/topics/${topic._id}/lessons`)}
+                      sx={{ borderRadius: '10px', fontSize: '0.72rem', whiteSpace: 'nowrap', ml: 1 }}
+                    >
+                      View Lessons
+                    </Button>
                   )}
                 </Box>
               </Card>
