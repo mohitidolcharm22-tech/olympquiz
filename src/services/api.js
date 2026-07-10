@@ -7,10 +7,18 @@ const baseURL = /^https?:\/\//i.test(rawBaseUrl) ? rawBaseUrl : `https://${rawBa
 
 const api = axios.create({
   baseURL,
-  // withCredentials is REQUIRED for HttpOnly cookies to be sent on
-  // cross-origin requests (Vercel frontend ↔ Railway backend).
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
+})
+
+// Attach Bearer token from localStorage on every request.
+// This works cross-origin without any SameSite/cookie restrictions.
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('accessToken')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
 })
 
 // On 401, dispatch a custom event. App.jsx listens for it and clears auth state,
