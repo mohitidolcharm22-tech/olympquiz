@@ -7,22 +7,20 @@ const baseURL = /^https?:\/\//i.test(rawBaseUrl) ? rawBaseUrl : `https://${rawBa
 
 const api = axios.create({
   baseURL,
-  // withCredentials: true is REQUIRED for HttpOnly cookies to be sent on
-  // cross-origin requests (frontend on :3000, backend on :5000).
-  // The browser automatically attaches both the accessToken and refreshToken
-  // cookies — no JS code needs to read or attach them manually.
+  // withCredentials is REQUIRED for HttpOnly cookies to be sent on
+  // cross-origin requests (Vercel frontend ↔ Railway backend).
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 })
 
-// No Authorization header needed — the HttpOnly cookie is sent automatically.
-// If the server returns 401, redirect to login.
+// On 401, dispatch a custom event. App.jsx listens for it and clears auth state,
+// which causes ProtectedRoute to navigate to /login — no full page reload.
 api.interceptors.response.use(
   (res) => res,
   (error) => {
     if (error.response?.status === 401) {
       if (!window.location.pathname.startsWith('/login')) {
-        window.location.href = '/login'
+        window.dispatchEvent(new CustomEvent('auth:unauthorized'))
       }
     }
     return Promise.reject(error)

@@ -5,7 +5,7 @@ import { studentTheme, teacherTheme, parentTheme, adminTheme } from './design-sy
 import AppRoutes from './routes'
 import { Snackbar, Alert } from '@mui/material'
 import { hideSnackbar } from './store/slices/uiSlice'
-import { restoreSession } from './store/slices/authSlice'
+import { logoutUser, restoreSession } from './store/slices/authSlice'
 import useInactivityLogout from './hooks/useInactivityLogout'
 import ErrorBoundary from './components/common/ErrorBoundary'
 
@@ -23,6 +23,14 @@ function AppContent() {
   // Restore session on every page load/refresh
   useEffect(() => {
     dispatch(restoreSession())
+  }, [dispatch])
+
+  // Listen for 401 responses from api.js — clears auth state so
+  // ProtectedRoute redirects to /login without a full page reload.
+  useEffect(() => {
+    const handle = () => dispatch(logoutUser())
+    window.addEventListener('auth:unauthorized', handle)
+    return () => window.removeEventListener('auth:unauthorized', handle)
   }, [dispatch])
 
   // Auto-logout after 10 min of inactivity
