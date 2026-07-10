@@ -55,22 +55,21 @@ export default function QuizResultPage() {
     }
   }, [quizId, quizResult])
 
+  // Derive questionById unconditionally — before any early returns
+  const questionById = useMemo(() => {
+    const map = new Map()
+    const result = quizResult ?? apiResult
+    for (const q of result?.quiz?.questions ?? []) {
+      map.set(String(q._id ?? q.id), q)
+    }
+    return map
+  }, [quizResult, apiResult])
+
   if (loading) return (
     <Box sx={{ display: 'flex', justifyContent: 'center', pt: 8 }}><CircularProgress /></Box>
   )
 
   const result = quizResult ?? apiResult
-
-  // useMemo must be called unconditionally before any early returns that depend on result.
-  // We derive questionById here; it safely returns an empty Map when result is null.
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const questionById = useMemo(() => {
-    const map = new Map()
-    for (const q of result?.quiz?.questions ?? []) {
-      map.set(String(q._id ?? q.id), q)
-    }
-    return map
-  }, [result?.quiz?.questions])
 
   if (!result && error) return (
     <Box sx={{ p: 3, textAlign: 'center' }}>

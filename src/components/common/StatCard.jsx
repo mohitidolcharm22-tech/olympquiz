@@ -1,7 +1,7 @@
 import { memo } from 'react'
-import { Card, CardContent, Typography, Box, Avatar } from '@mui/material'
+import { Card, CardContent, Typography, Box } from '@mui/material'
 
-function StatCard({ title, value, subtitle, icon, color = '#6C63FF', trend, bgGradient }) {
+function StatCard({ title, value, icon, color = '#6C63FF', bgGradient }) {
   return (
     <Card sx={{
       background: bgGradient || `linear-gradient(135deg, ${color}15 0%, ${color}08 100%)`,
@@ -9,33 +9,23 @@ function StatCard({ title, value, subtitle, icon, color = '#6C63FF', trend, bgGr
       borderRadius: '16px',
       height: '100%',
     }}>
-      <CardContent sx={{ p: 2.5 }}>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="body2" color="text.secondary" fontWeight={600} sx={{ mb: 0.5 }}>
-              {title}
-            </Typography>
-            <Typography variant="h4" fontWeight={800} sx={{ color, lineHeight: 1.1, mb: 0.25 }}>
-              {value}
-            </Typography>
-            {subtitle && (
-              <Typography variant="caption" color="text.secondary">{subtitle}</Typography>
-            )}
-            {trend && (
-              <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5, gap: 0.5 }}>
-                <Typography variant="caption" sx={{ color: trend > 0 ? 'success.main' : 'error.main', fontWeight: 600 }}>
-                  {trend > 0 ? '↑' : '↓'} {Math.abs(trend)}%
-                </Typography>
-                <Typography variant="caption" color="text.secondary">vs last week</Typography>
-              </Box>
-            )}
+      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+          <Typography variant="caption" color="text.secondary" fontWeight={600} noWrap sx={{ lineHeight: 1.2 }}>
+            {title}
+          </Typography>
+          <Box sx={{
+            fontSize: '1.25rem', lineHeight: 1,
+            bgcolor: `${color}20`, borderRadius: '8px',
+            width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0, ml: 0.5,
+          }}>
+            {icon}
           </Box>
-          {icon && (
-            <Avatar sx={{ bgcolor: `${color}20`, color, width: 48, height: 48, fontSize: '1.5rem', borderRadius: '12px' }}>
-              {icon}
-            </Avatar>
-          )}
         </Box>
+        <Typography variant="h4" fontWeight={800} sx={{ color, lineHeight: 1 }}>
+          {value}
+        </Typography>
       </CardContent>
     </Card>
   )

@@ -22,13 +22,11 @@ import { logoutUser } from '../../store/slices/authSlice'
 import { feedbackApi } from '../../services/apiCatalog'
 
 const navItems = [
-  { label: 'Home', icon: <HomeRoundedIcon />, path: '/student/dashboard' },
-  { label: 'Learn', icon: <MenuBookRoundedIcon />, path: '/student/subjects' },
-  { label: 'Lessons', icon: <AutoStoriesRoundedIcon />, path: '/student/lessons' },
-  { label: 'Quiz', icon: <QuizRoundedIcon />, path: '/student/quizzes' },
-  { label: 'Leaders', icon: <LeaderboardRoundedIcon />, path: '/student/leaderboard' },
-  { label: 'Progress', icon: <TrendingUpRoundedIcon />, path: '/student/progress' },
-  { label: 'Rewards', icon: <EmojiEventsRoundedIcon />, path: '/student/achievements' },
+  { label: 'Home',     icon: <HomeRoundedIcon />,        path: '/student/dashboard' },
+  { label: 'Subjects', icon: <MenuBookRoundedIcon />,     path: '/student/subjects' },
+  { label: 'Quizzes',  icon: <QuizRoundedIcon />,         path: '/student/quizzes' },
+  { label: 'Progress', icon: <TrendingUpRoundedIcon />,   path: '/student/progress' },
+  { label: 'Rewards',  icon: <EmojiEventsRoundedIcon />,  path: '/student/achievements' },
 ]
 
 export default function StudentLayout() {
@@ -136,6 +134,14 @@ export default function StudentLayout() {
           </Box>
         </MenuItem>
         <Divider />
+        <MenuItem onClick={() => { navigate('/student/lessons'); setAnchorEl(null) }}>
+          <ListItemIcon><AutoStoriesRoundedIcon fontSize="small" /></ListItemIcon>
+          All Lessons
+        </MenuItem>
+        <MenuItem onClick={() => { navigate('/student/leaderboard'); setAnchorEl(null) }}>
+          <ListItemIcon><LeaderboardRoundedIcon fontSize="small" /></ListItemIcon>
+          Leaderboard
+        </MenuItem>
         <MenuItem onClick={() => { navigate('/student/progress'); setAnchorEl(null) }}>
           <ListItemIcon><TrendingUpRoundedIcon fontSize="small" /></ListItemIcon>
           My Progress
@@ -215,6 +221,7 @@ export default function StudentLayout() {
       {/* Bottom Navigation (Mobile) */}
       {isMobile && (
         <BottomNavigation
+          showLabels
           value={currentTab >= 0 ? currentTab : 0}
           onChange={(e, newValue) => navigate(navItems[newValue].path)}
           sx={{
